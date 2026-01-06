@@ -35,9 +35,9 @@ export default function WasteJobs() {
     // Set company name if user is associated with a company
     if (session.company) {
       setCurrentCompanyName(session.company.name);
-      // Pre-select customer for company admin and operator
+      // Pre-select customer for company admin and operator based on company type
       if (session.user.role === UserRole.COMPANY_ADMIN || session.user.role === UserRole.OPERATOR) {
-        const matchingCustomer = customers.find(c => c.id === session.user.companyId);
+        const matchingCustomer = customers.find(c => c.type === session.company?.type);
         if (matchingCustomer) {
           setSelectedCustomer(matchingCustomer);
         }

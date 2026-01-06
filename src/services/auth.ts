@@ -180,6 +180,11 @@ export class AuthService {
       throw new Error('Username already exists');
     }
 
+    // Check if email already exists
+    if (this.users.find((u) => u.email === email)) {
+      throw new Error('Email already exists');
+    }
+
     const user: User = {
       id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       username,

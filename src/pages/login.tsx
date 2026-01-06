@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { AuthService } from '../services/auth';
+import { UserRole } from '../types';
 
 export default function Login() {
   const router = useRouter();
@@ -23,9 +24,9 @@ export default function Login() {
         localStorage.setItem('authSession', JSON.stringify(session));
         
         // Redirect based on role
-        if (session.user.role === 'SYSTEM_ADMIN') {
+        if (session.user.role === UserRole.SYSTEM_ADMIN) {
           router.push('/admin');
-        } else if (session.user.role === 'COMPANY_ADMIN') {
+        } else if (session.user.role === UserRole.COMPANY_ADMIN) {
           router.push('/company-admin');
         } else {
           router.push('/waste-jobs');
