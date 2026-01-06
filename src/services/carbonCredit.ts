@@ -43,7 +43,7 @@ export class CarbonCreditService {
     const registryId = this.generateRegistryId(emissionsData);
 
     const carbonCredit: CarbonCredit = {
-      id: `CC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `CC-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       tokenId,
       emissionsDataId: emissionsData.id,
       verificationRecordId: verificationRecord.id,
@@ -103,7 +103,7 @@ export class CarbonCreditService {
     }
 
     const transaction: CarbonCreditTransaction = {
-      id: `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `TX-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       carbonCreditId: carbonCredit.id,
       transactionType: TransactionType.SALE,
       buyerId,
@@ -133,7 +133,7 @@ export class CarbonCreditService {
 
     // Create offset transaction
     const offsetTransaction: CarbonCreditTransaction = {
-      id: `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `TX-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       carbonCreditId: carbonCredit.id,
       transactionType: TransactionType.OFFSET,
       buyerId,
@@ -145,7 +145,7 @@ export class CarbonCreditService {
 
     // Create destruction transaction
     const destroyTransaction: CarbonCreditTransaction = {
-      id: `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `TX-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       carbonCreditId: carbonCredit.id,
       transactionType: TransactionType.DESTROY,
       buyerId,
@@ -211,22 +211,22 @@ export class CarbonCreditService {
 
   private static generateTokenId(emissionsData: EmissionsData): string {
     const timestamp = Date.now();
-    const hash = Math.random().toString(36).substr(2, 9).toUpperCase();
+    const hash = Math.random().toString(36).substring(2, 11).toUpperCase();
     return `BRRP-NFT-${timestamp}-${hash}`;
   }
 
   private static generateBlockchainAddress(tokenId: string): string {
     // In production, this would be actual blockchain address
-    return `0x${Math.random().toString(16).substr(2, 40)}`;
+    return `0x${Math.random().toString(16).substring(2, 42)}`;
   }
 
   private static generateRegistryId(emissionsData: EmissionsData): string {
     const timestamp = Date.now();
-    const hash = Math.random().toString(36).substr(2, 9).toUpperCase();
+    const hash = Math.random().toString(36).substring(2, 11).toUpperCase();
     return `OPENEARTH-${timestamp}-${hash}`;
   }
 
   private static generateTransactionHash(): string {
-    return `0x${Math.random().toString(16).substr(2, 64)}`;
+    return `0x${Math.random().toString(16).substring(2, 66)}`;
   }
 }

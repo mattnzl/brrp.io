@@ -22,7 +22,7 @@ export class WasteProcessingService {
     const energyOutput = this.estimateEnergyOutput(methaneYield);
 
     const process: BRRPProcess = {
-      id: `BP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `BP-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       wasteInputId: wasteInput.id,
       processType: 'ANAEROBIC_DIGESTION',
       startTime: new Date(),

@@ -51,7 +51,7 @@ export function calculatePercentage(value: number, total: number): number {
  * Generate unique ID
  */
 export function generateId(prefix: string = 'ID'): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
 }
 
 /**

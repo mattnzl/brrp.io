@@ -135,7 +135,7 @@ export class EmissionsCalculationService {
     const grossEmissionsReduction = co2Equivalent;
     
     const emissionsData: EmissionsData = {
-      id: `EM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `EM-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       scadaMeasurementId: scadaData.id,
       methaneDestroyed: scadaData.methaneDestroyed,
       co2Equivalent,

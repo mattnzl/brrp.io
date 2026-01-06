@@ -163,7 +163,7 @@ export class ExternalDataService {
     
     try {
       // Simulate API call
-      const registryId = `OPENEARTH-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const registryId = `OPENEARTH-${Date.now()}-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
       const registryUrl = `https://openearth.org/registry/${registryId}`;
       
       return {
