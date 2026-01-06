@@ -24,12 +24,14 @@ export default function Login() {
         localStorage.setItem('authSession', JSON.stringify(session));
         
         // Redirect based on role
-        if (session.user.role === UserRole.SYSTEM_ADMIN) {
+        if (session.user.role === UserRole.ADMIN) {
           router.push('/admin');
-        } else if (session.user.role === UserRole.COMPANY_ADMIN) {
-          router.push('/company-admin');
+        } else if (session.user.role === UserRole.CUSTOMER) {
+          router.push('/customer');
+        } else if (session.user.role === UserRole.DRIVER) {
+          router.push('/driver');
         } else {
-          router.push('/waste-jobs');
+          router.push('/');
         }
       } else {
         setError('Invalid username or password');
@@ -96,7 +98,9 @@ export default function Login() {
 
             <div className="demo-credentials">
               <p><strong>Demo Credentials:</strong></p>
-              <p>System Admin: <code>admin</code> / (any password)</p>
+              <p>Admin: <code>admin</code> / (any password)</p>
+              <p>Customer: <code>wmnz_customer</code> / (any password)</p>
+              <p>Driver: <code>driver1</code> / (any password)</p>
             </div>
           </form>
         </div>
