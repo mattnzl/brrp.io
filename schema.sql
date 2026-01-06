@@ -1,5 +1,8 @@
 -- BRRP.IO Waste Jobs Database Schema
 -- PostgreSQL Table Definition
+-- Requires PostgreSQL 13+ for gen_random_uuid() function
+-- For PostgreSQL < 13, enable pgcrypto extension: CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- and use gen_random_uuid() or uuid_generate_v4()
 
 -- Create waste_jobs table
 CREATE TABLE IF NOT EXISTS waste_jobs (

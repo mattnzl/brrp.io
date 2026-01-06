@@ -87,13 +87,13 @@ export default async function handler(
       paramIndex++;
     }
 
-    // Note: marketplace_status column would need to be added to the schema
-    // For now, we'll just handle status updates
-    // if (body.marketplaceStatus) {
-    //   updates.push(`marketplace_status = $${paramIndex}`);
-    //   params.push(body.marketplaceStatus);
-    //   paramIndex++;
-    // }
+    // Note: marketplace_status column would need to be added to the schema if implemented
+    if (body.marketplaceStatus) {
+      return res.status(400).json({
+        error: 'Marketplace status updates not yet supported',
+        details: 'This feature will be added in a future update',
+      });
+    }
 
     if (updates.length === 0) {
       return res.status(400).json({

@@ -8,6 +8,7 @@ import {
   Customer,
   CustomerType,
 } from '../types';
+import { generateJobNumber } from '../utils/formatters';
 
 /**
  * Waste Jobs Service
@@ -106,7 +107,7 @@ export class WasteJobsService {
     weighbridgeWeight: number,
     notes?: string
   ): WasteJob {
-    const jobNumber = `WJ-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const jobNumber = generateJobNumber();
     const properties = this.getWasteStreamProperties()[wasteStream];
     const totalPrice = weighbridgeWeight * properties.standardPrice;
 

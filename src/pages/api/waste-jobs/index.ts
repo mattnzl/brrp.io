@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getPool } from '../../../lib/db';
 import { WasteJobsService } from '../../../services/wasteJobs';
 import { WasteStreamType } from '../../../types';
+import { generateJobNumber } from '../../../utils/formatters';
 
 type ErrorResponse = {
   error: string;
@@ -91,7 +92,7 @@ async function handlePost(
     );
 
     // Generate job number
-    const jobNumber = `WJ-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const jobNumber = generateJobNumber();
 
     // Insert into database
     const pool = getPool();

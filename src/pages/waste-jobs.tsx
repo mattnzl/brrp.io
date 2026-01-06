@@ -55,7 +55,7 @@ export default function WasteJobs() {
     setError('');
     try {
       const status = activeTab === 'All' ? '' : activeTab;
-      const response = await fetch(`/api/waste-jobs?status=${status}&page=${currentPage}&perPage=100`);
+      const response = await fetch(`/api/waste-jobs?status=${status}&page=1&perPage=100`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch waste jobs');
@@ -69,7 +69,7 @@ export default function WasteJobs() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, currentPage]);
+  }, [activeTab]);
 
   useEffect(() => {
     const session = AuthService.getCurrentSession();
