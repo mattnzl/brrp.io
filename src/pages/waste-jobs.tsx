@@ -47,6 +47,7 @@ export default function WasteJobs() {
     setWasteJobs([newJob, ...wasteJobs]);
     
     // Reset form
+    setSelectedCustomer(null);
     setSelectedWasteStream('');
     setTruckRegistration('');
     setWeighbridgeWeight('');
