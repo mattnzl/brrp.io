@@ -69,9 +69,15 @@ export interface WasteJob {
   status: WasteJobStatus;
   totalPrice?: number; // calculated from weight * standardPrice
   notes?: string;
+  companyId?: string; // Company associated with the job
+  companyName?: string; // Company name for display
 }
 
 export enum WasteJobStatus {
+  PENDING_APPROVAL = 'Pending Approval',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+  // Legacy statuses for backward compatibility
   WEIGHED = 'WEIGHED',
   PROCESSING = 'PROCESSING',
   COMPLETED = 'COMPLETED',

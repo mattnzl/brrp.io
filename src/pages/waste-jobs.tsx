@@ -1,16 +1,42 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { WasteJob, WasteStreamType, Customer, User, UserRole } from '../types';
+import { WasteStreamType, Customer, User, UserRole } from '../types';
 import { WasteJobsService } from '../services/wasteJobs';
 import { AuthService } from '../services/auth';
 
+// API response types
+type WasteJobAPI = {
+  id: string;
+  jobNumber: string;
+  customerId: string;
+  customerName: string;
+  customerType: string;
+  wasteStream: string;
+  truckRegistration: string;
+  weighbridgeWeight: number;
+  status: string;
+  totalPrice: number;
+  notes?: string;
+  companyId?: string;
+  companyName?: string;
+  createdAt: string;
+};
+
 export default function WasteJobs() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'input' | 'overview'>('input');
-  const [wasteJobs, setWasteJobs] = useState<WasteJob[]>([]);
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending Approval' | 'Approved' | 'Rejected'>('All');
+  const [wasteJobs, setWasteJobs] = useState<WasteJobAPI[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentCompanyName, setCurrentCompanyName] = useState('');
+  const [currentCompanyId, setCurrentCompanyId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   
   // Form state
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -19,6 +45,7 @@ export default function WasteJobs() {
   const [weighbridgeWeight, setWeighbridgeWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
 
   const customers = WasteJobsService.getAvailableCustomers();
   const wasteStreamProperties = WasteJobsService.getWasteStreamProperties();
@@ -32,9 +59,10 @@ export default function WasteJobs() {
 
     setCurrentUser(session.user);
     
-    // Set company name if user is associated with a company
+    // Set company info if user is associated with a company
     if (session.company) {
       setCurrentCompanyName(session.company.name);
+      setCurrentCompanyId(session.company.id);
       // Pre-select customer for company admin and operator based on company type
       if (session.user.role === UserRole.COMPANY_ADMIN || session.user.role === UserRole.OPERATOR) {
         const matchingCustomer = customers.find(c => c.type === session.company?.type);
@@ -43,12 +71,47 @@ export default function WasteJobs() {
         }
       }
     }
-  }, [router, customers]);
+
+    // Fetch waste jobs from API
+    fetchWasteJobs();
+  }, [router]);
+
+  const fetchWasteJobs = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const status = activeTab === 'All' ? '' : activeTab;
+      const response = await fetch(`/api/waste-jobs?status=${status}&page=${currentPage}&perPage=100`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch waste jobs');
+      }
+      
+      const data = await response.json();
+      setWasteJobs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load waste jobs');
+      console.error('Error fetching waste jobs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refetch when tab changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchWasteJobs();
+    }
+  }, [activeTab]);
 
   const handleLogout = () => {
     AuthService.logout();
     localStorage.removeItem('authSession');
     router.push('/login');
+  };
+
+  const goToHome = () => {
+    router.push('/');
   };
 
   const goToAdminDashboard = () => {
@@ -59,10 +122,9 @@ export default function WasteJobs() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Clear previous validation error
     setValidationError('');
     
     // Validate form
@@ -77,28 +139,90 @@ export default function WasteJobs() {
       return;
     }
 
-    const newJob = WasteJobsService.createWasteJob(
-      selectedCustomer,
-      selectedWasteStream as WasteStreamType,
-      truckRegistration,
-      weight,
-      notes
-    );
+    try {
+      setLoading(true);
+      const response = await fetch('/api/waste-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: selectedCustomer,
+          wasteStream: selectedWasteStream,
+          truckRegistration,
+          weighbridgeWeight: weight,
+          notes: notes || undefined,
+          companyId: currentCompanyId || undefined,
+          companyName: currentCompanyName || undefined,
+        }),
+      });
 
-    setWasteJobs([newJob, ...wasteJobs]);
-    
-    // Reset form (but keep customer selected for company users)
-    if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
-      setSelectedCustomer(null);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create waste job');
+      }
+
+      // Reset form
+      if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
+        setSelectedCustomer(null);
+      }
+      setSelectedWasteStream('');
+      setTruckRegistration('');
+      setWeighbridgeWeight('');
+      setNotes('');
+      setValidationError('');
+      setShowCreateForm(false);
+      
+      // Refresh the list
+      await fetchWasteJobs();
+    } catch (err) {
+      setValidationError(err instanceof Error ? err.message : 'Failed to create waste job');
+    } finally {
+      setLoading(false);
     }
-    setSelectedWasteStream('');
-    setTruckRegistration('');
-    setWeighbridgeWeight('');
-    setNotes('');
-    setValidationError('');
-    
-    // Switch to overview tab
-    setActiveTab('overview');
+  };
+
+  const handleStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/waste-jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update status');
+      }
+
+      // Refresh the list
+      await fetchWasteJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedJobs(new Set(filteredJobs.map(job => job.id)));
+    } else {
+      setSelectedJobs(new Set());
+    }
+  };
+
+  const handleSelectJob = (jobId: string) => {
+    const newSelected = new Set(selectedJobs);
+    if (newSelected.has(jobId)) {
+      newSelected.delete(jobId);
+    } else {
+      newSelected.add(jobId);
+    }
+    setSelectedJobs(newSelected);
   };
 
   if (!currentUser) {
@@ -109,11 +233,26 @@ export default function WasteJobs() {
     ? WasteJobsService.calculatePrice(selectedWasteStream as WasteStreamType, parseFloat(weighbridgeWeight) || 0)
     : 0;
 
+  // Filter jobs based on active tab
+  const filteredJobs = wasteJobs;
+
+  // Calculate summary stats
+  const totalJobs = wasteJobs.length;
+  const pendingCount = wasteJobs.filter(j => j.status === 'Pending Approval').length;
+  const approvedCount = wasteJobs.filter(j => j.status === 'Approved').length;
+  const rejectedCount = wasteJobs.filter(j => j.status === 'Rejected').length;
+
+  // Pagination
+  const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
   return (
     <>
       <Head>
         <title>Waste Jobs - BRRP.IO</title>
-        <meta name="description" content="Waste Jobs Management - Weighbridge Input" />
+        <meta name="description" content="Waste Jobs Management" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -134,6 +273,7 @@ export default function WasteJobs() {
               {currentUser.role === UserRole.OPERATOR && 'Operator'}
             </span>
             <div className="button-group">
+              <button onClick={goToHome} className="nav-btn">Home</button>
               {(currentUser.role === UserRole.SYSTEM_ADMIN || currentUser.role === UserRole.COMPANY_ADMIN) && (
                 <button onClick={goToAdminDashboard} className="admin-btn">
                   {currentUser.role === UserRole.SYSTEM_ADMIN ? 'Admin Dashboard' : 'Manage Operators'}
@@ -144,126 +284,103 @@ export default function WasteJobs() {
           </div>
         </header>
 
-        <nav className="nav">
-          <button 
-            className={activeTab === 'input' ? 'active' : ''} 
-            onClick={() => setActiveTab('input')}
-          >
-            Weighbridge Input
-          </button>
-          <button 
-            className={activeTab === 'overview' ? 'active' : ''} 
-            onClick={() => setActiveTab('overview')}
-          >
-            Jobs Overview ({wasteJobs.length})
-          </button>
-        </nav>
-
         <main className="main">
-          {activeTab === 'input' && (
-            <div className="section">
-              <h2>Weighbridge Input</h2>
+          {/* Breadcrumb and header */}
+          <div className="page-header">
+            <div className="breadcrumb">
+              <span className="breadcrumb-item" onClick={goToHome}>Home</span>
+              <span className="breadcrumb-separator">/</span>
+              <span className="breadcrumb-item active">Waste Jobs</span>
+            </div>
+            <div className="header-actions">
+              <button className="create-btn" onClick={() => setShowCreateForm(!showCreateForm)}>
+                {showCreateForm ? 'Cancel' : '+ New Waste Job'}
+              </button>
+              <button className="export-btn">Export Report</button>
+            </div>
+          </div>
+
+          {/* Create form modal/section */}
+          {showCreateForm && (
+            <div className="create-form-section">
               <div className="form-card">
-                <h3>Record New Waste Job</h3>
+                <h3>Create New Waste Job</h3>
                 {validationError && (
                   <div className="validation-error">
                     {validationError}
                   </div>
                 )}
                 <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label>Customer *</label>
-                    <select 
-                      value={selectedCustomer?.id || ''} 
-                      onChange={(e) => {
-                        const customer = customers.find(c => c.id === e.target.value);
-                        setSelectedCustomer(customer || null);
-                      }}
-                      required
-                      disabled={currentUser.role !== UserRole.SYSTEM_ADMIN}
-                    >
-                      <option value="">Select customer...</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </option>
-                      ))}
-                    </select>
-                    {(currentUser.role === UserRole.COMPANY_ADMIN || currentUser.role === UserRole.OPERATOR) && (
-                      <div className="field-note">
-                        Your company is automatically selected
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Waste Stream *</label>
-                    <select 
-                      value={selectedWasteStream} 
-                      onChange={(e) => setSelectedWasteStream(e.target.value as WasteStreamType)}
-                      required
-                    >
-                      <option value="">Select waste stream...</option>
-                      {Object.values(WasteStreamType).map(type => {
-                        const props = wasteStreamProperties[type];
-                        return (
-                          <option key={type} value={type}>
-                            {WasteJobsService.getWasteStreamName(type)} - ${props.standardPrice}/tonne
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Customer *</label>
+                      <select 
+                        value={selectedCustomer?.id || ''} 
+                        onChange={(e) => {
+                          const customer = customers.find(c => c.id === e.target.value);
+                          setSelectedCustomer(customer || null);
+                        }}
+                        required
+                        disabled={currentUser.role !== UserRole.SYSTEM_ADMIN}
+                      >
+                        <option value="">Select customer...</option>
+                        {customers.map(customer => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name}
                           </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {selectedWasteStream && (
-                    <div className="info-box">
-                      <h4>Waste Stream Properties</h4>
-                      <div className="properties-grid">
-                        <div className="property">
-                          <span className="property-label">Standard Price:</span>
-                          <span className="property-value">${wasteStreamProperties[selectedWasteStream as WasteStreamType].standardPrice}/tonne (excl GST)</span>
-                        </div>
-                        <div className="property">
-                          <span className="property-label">Energy Value:</span>
-                          <span className="property-value">{wasteStreamProperties[selectedWasteStream as WasteStreamType].energyValue}</span>
-                        </div>
-                        <div className="property">
-                          <span className="property-label">Nutrient Value:</span>
-                          <span className="property-value">{wasteStreamProperties[selectedWasteStream as WasteStreamType].nutrientValue}</span>
-                        </div>
-                      </div>
+                        ))}
+                      </select>
                     </div>
-                  )}
 
-                  <div className="form-group">
-                    <label>Truck Registration *</label>
-                    <input 
-                      type="text" 
-                      value={truckRegistration}
-                      onChange={(e) => setTruckRegistration(e.target.value)}
-                      placeholder="e.g., ABC123" 
-                      required
-                    />
+                    <div className="form-group">
+                      <label>Waste Stream *</label>
+                      <select 
+                        value={selectedWasteStream} 
+                        onChange={(e) => setSelectedWasteStream(e.target.value as WasteStreamType)}
+                        required
+                      >
+                        <option value="">Select waste stream...</option>
+                        {Object.values(WasteStreamType).map(type => {
+                          const props = wasteStreamProperties[type];
+                          return (
+                            <option key={type} value={type}>
+                              {WasteJobsService.getWasteStreamName(type)} - ${props.standardPrice}/tonne
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="form-group">
-                    <label>Weighbridge Weight (tonnes) *</label>
-                    <input 
-                      type="number" 
-                      value={weighbridgeWeight}
-                      onChange={(e) => setWeighbridgeWeight(e.target.value)}
-                      placeholder="0.00" 
-                      step="0.01"
-                      min="0"
-                      required
-                    />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Truck Registration *</label>
+                      <input 
+                        type="text" 
+                        value={truckRegistration}
+                        onChange={(e) => setTruckRegistration(e.target.value)}
+                        placeholder="e.g., ABC123" 
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Weighbridge Weight (tonnes) *</label>
+                      <input 
+                        type="number" 
+                        value={weighbridgeWeight}
+                        onChange={(e) => setWeighbridgeWeight(e.target.value)}
+                        placeholder="0.00" 
+                        step="0.01"
+                        min="0"
+                        required
+                      />
+                    </div>
                   </div>
 
                   {estimatedPrice > 0 && (
-                    <div className="price-estimate">
-                      <h4>Estimated Price</h4>
-                      <div className="price">${estimatedPrice.toFixed(2)} (excl GST)</div>
-                      <div className="price-gst">${(estimatedPrice * 1.15).toFixed(2)} (incl GST)</div>
+                    <div className="price-preview">
+                      Estimated Price: ${estimatedPrice.toFixed(2)} (excl GST)
                     </div>
                   )}
 
@@ -272,98 +389,211 @@ export default function WasteJobs() {
                     <textarea 
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Additional notes or observations..."
-                      rows={3}
+                      placeholder="Additional notes..."
+                      rows={2}
                     />
                   </div>
 
-                  <button type="submit" className="submit-btn">Create Waste Job</button>
+                  <div className="form-actions">
+                    <button type="button" className="cancel-btn" onClick={() => setShowCreateForm(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="submit-btn" disabled={loading}>
+                      {loading ? 'Creating...' : 'Create Waste Job'}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
           )}
 
-          {activeTab === 'overview' && (
-            <div className="section">
-              <h2>Waste Jobs Overview</h2>
-              
-              {wasteJobs.length === 0 ? (
-                <div className="empty-state">
-                  <p>No waste jobs recorded yet.</p>
-                  <p>Use the &quot;Weighbridge Input&quot; tab to create a new waste job.</p>
-                </div>
-              ) : (
-                <div className="jobs-container">
-                  <div className="summary-cards">
-                    <div className="summary-card">
-                      <h3>Total Jobs</h3>
-                      <div className="summary-value">{wasteJobs.length}</div>
-                    </div>
-                    <div className="summary-card">
-                      <h3>Total Weight</h3>
-                      <div className="summary-value">
-                        {wasteJobs.reduce((sum, job) => sum + job.weighbridgeWeight, 0).toFixed(2)} tonnes
-                      </div>
-                    </div>
-                    <div className="summary-card">
-                      <h3>Total Value</h3>
-                      <div className="summary-value">
-                        ${wasteJobs.reduce((sum, job) => sum + (job.totalPrice || 0), 0).toFixed(2)}
-                      </div>
-                      <div className="summary-subtitle">excl GST</div>
-                    </div>
-                  </div>
+          {/* Summary cards */}
+          <div className="summary-cards">
+            <div className="summary-card">
+              <div className="summary-label">Total Jobs</div>
+              <div className="summary-value">{totalJobs}</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-label">Pending Approval</div>
+              <div className="summary-value pending">{pendingCount}</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-label">Approved</div>
+              <div className="summary-value approved">{approvedCount}</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-label">Rejected</div>
+              <div className="summary-value rejected">{rejectedCount}</div>
+            </div>
+          </div>
 
-                  <div className="jobs-list">
-                    {wasteJobs.map(job => (
-                      <div key={job.id} className="job-card">
-                        <div className="job-header">
-                          <div className="job-number">{job.jobNumber}</div>
-                          <div className={`job-status status-${job.status.toLowerCase()}`}>
-                            {job.status}
-                          </div>
-                        </div>
-                        <div className="job-details">
-                          <div className="detail-row">
-                            <span className="detail-label">Customer:</span>
-                            <span className="detail-value">{job.customer.name}</span>
-                          </div>
-                          <div className="detail-row">
-                            <span className="detail-label">Waste Stream:</span>
-                            <span className="detail-value">{WasteJobsService.getWasteStreamName(job.wasteStream)}</span>
-                          </div>
-                          <div className="detail-row">
-                            <span className="detail-label">Truck:</span>
-                            <span className="detail-value">{job.truckRegistration}</span>
-                          </div>
-                          <div className="detail-row">
-                            <span className="detail-label">Weight:</span>
-                            <span className="detail-value">{job.weighbridgeWeight.toFixed(2)} tonnes</span>
-                          </div>
-                          <div className="detail-row">
-                            <span className="detail-label">Time:</span>
-                            <span className="detail-value">{new Date(job.timestamp).toLocaleString()}</span>
-                          </div>
-                          {job.notes && (
-                            <div className="detail-row">
-                              <span className="detail-label">Notes:</span>
-                              <span className="detail-value">{job.notes}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="job-footer">
-                          <div className="job-price">
-                            <span className="price-label">Total:</span>
-                            <span className="price-value">${job.totalPrice?.toFixed(2)} (excl GST)</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {/* Error message */}
+          {error && (
+            <div className="error-banner">
+              {error}
             </div>
           )}
+
+          {/* Tabs */}
+          <div className="tabs">
+            <button 
+              className={activeTab === 'All' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('All')}
+            >
+              All ({totalJobs})
+            </button>
+            <button 
+              className={activeTab === 'Pending Approval' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('Pending Approval')}
+            >
+              Pending Approval ({pendingCount})
+            </button>
+            <button 
+              className={activeTab === 'Approved' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('Approved')}
+            >
+              Approved ({approvedCount})
+            </button>
+            <button 
+              className={activeTab === 'Rejected' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('Rejected')}
+            >
+              Rejected ({rejectedCount})
+            </button>
+          </div>
+
+          {/* Data table */}
+          <div className="table-container">
+            {loading ? (
+              <div className="loading-state">Loading waste jobs...</div>
+            ) : paginatedJobs.length === 0 ? (
+              <div className="empty-state">
+                <p>No waste jobs found for this filter.</p>
+                <button className="create-btn" onClick={() => setShowCreateForm(true)}>
+                  + Create First Waste Job
+                </button>
+              </div>
+            ) : (
+              <>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedJobs.size === filteredJobs.length && filteredJobs.length > 0}
+                          onChange={handleSelectAll}
+                        />
+                      </th>
+                      <th>Job ID</th>
+                      <th>Customer</th>
+                      <th>Waste Stream</th>
+                      <th>Truck Reg</th>
+                      <th>Weight (t)</th>
+                      <th>Total Price</th>
+                      <th>Status</th>
+                      <th>Marketplace</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedJobs.map(job => (
+                      <tr key={job.id}>
+                        <td>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedJobs.has(job.id)}
+                            onChange={() => handleSelectJob(job.id)}
+                          />
+                        </td>
+                        <td className="job-number">{job.jobNumber}</td>
+                        <td>{job.customerName}</td>
+                        <td>{WasteJobsService.getWasteStreamName(job.wasteStream as WasteStreamType)}</td>
+                        <td>{job.truckRegistration}</td>
+                        <td>{job.weighbridgeWeight.toFixed(2)}</td>
+                        <td>${job.totalPrice.toFixed(2)}</td>
+                        <td>
+                          <span className={`status-chip status-${job.status.toLowerCase().replace(' ', '-')}`}>
+                            {job.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="marketplace-chip marketplace-not-listed">
+                            Not Listed
+                          </span>
+                        </td>
+                        <td>{new Date(job.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <div className="action-menu">
+                            <select 
+                              className="action-select"
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleStatusChange(job.id, e.target.value);
+                                }
+                              }}
+                            >
+                              <option value="">Actions...</option>
+                              {job.status !== 'Pending Approval' && (
+                                <option value="Pending Approval">Set Pending</option>
+                              )}
+                              {job.status !== 'Approved' && (
+                                <option value="Approved">Approve</option>
+                              )}
+                              {job.status !== 'Rejected' && (
+                                <option value="Rejected">Reject</option>
+                              )}
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination */}
+                <div className="pagination">
+                  <div className="pagination-info">
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredJobs.length)} of {filteredJobs.length} entries
+                  </div>
+                  <div className="pagination-controls">
+                    <label>
+                      Rows per page:
+                      <select 
+                        value={rowsPerPage} 
+                        onChange={(e) => {
+                          setRowsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </label>
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <span className="page-indicator">
+                      Page {currentPage} of {totalPages || 1}
+                    </span>
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </main>
 
         <footer className="footer">
@@ -381,7 +611,7 @@ export default function WasteJobs() {
         }
 
         .header {
-          padding: 2rem;
+          padding: 1.5rem 2rem;
           background: rgba(0, 0, 0, 0.3);
           border-bottom: 2px solid rgba(255, 255, 255, 0.1);
           display: flex;
@@ -391,7 +621,7 @@ export default function WasteJobs() {
 
         .logo h1 {
           margin: 0;
-          font-size: 3rem;
+          font-size: 2rem;
           font-weight: bold;
           background: linear-gradient(45deg, #fbbf24, #f59e0b);
           -webkit-background-clip: text;
@@ -400,8 +630,8 @@ export default function WasteJobs() {
         }
 
         .tagline {
-          margin: 0.5rem 0 0 0;
-          font-size: 1.2rem;
+          margin: 0.25rem 0 0 0;
+          font-size: 0.95rem;
           color: #fbbf24;
         }
 
@@ -414,11 +644,11 @@ export default function WasteJobs() {
 
         .user-name {
           font-weight: 600;
-          font-size: 1.1rem;
+          font-size: 1rem;
         }
 
         .user-role {
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           opacity: 0.8;
         }
 
@@ -427,7 +657,7 @@ export default function WasteJobs() {
           gap: 0.5rem;
         }
 
-        .admin-btn {
+        .nav-btn, .admin-btn {
           padding: 0.5rem 1rem;
           background: linear-gradient(45deg, #8b5cf6, #7c3aed);
           border: none;
@@ -439,7 +669,7 @@ export default function WasteJobs() {
           transition: all 0.3s;
         }
 
-        .admin-btn:hover {
+        .nav-btn:hover, .admin-btn:hover {
           transform: translateY(-2px);
         }
 
@@ -458,51 +688,85 @@ export default function WasteJobs() {
           background: rgba(239, 68, 68, 0.3);
         }
 
-        .nav {
-          margin-top: 0;
-          padding: 1rem 2rem;
-          background: rgba(0, 0, 0, 0.2);
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .nav button {
-          padding: 0.75rem 1.5rem;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 1rem;
-          transition: all 0.3s;
-        }
-
-        .nav button:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: translateY(-2px);
-        }
-
-        .nav button.active {
-          background: linear-gradient(45deg, #fbbf24, #f59e0b);
-          border-color: #fbbf24;
-          font-weight: bold;
-        }
-
         .main {
           flex: 1;
           padding: 2rem;
-        }
-
-        .section {
-          max-width: 1200px;
+          max-width: 1400px;
           margin: 0 auto;
+          width: 100%;
         }
 
-        h2 {
-          font-size: 2.5rem;
+        .page-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 2rem;
-          text-align: center;
+        }
+
+        .breadcrumb {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.95rem;
+        }
+
+        .breadcrumb-item {
+          cursor: pointer;
+          opacity: 0.7;
+          transition: opacity 0.2s;
+        }
+
+        .breadcrumb-item:hover {
+          opacity: 1;
+        }
+
+        .breadcrumb-item.active {
+          opacity: 1;
+          font-weight: 600;
+          color: #fbbf24;
+        }
+
+        .breadcrumb-separator {
+          opacity: 0.5;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .create-btn {
+          padding: 0.75rem 1.5rem;
+          background: linear-gradient(45deg, #10b981, #059669);
+          border: none;
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .create-btn:hover {
+          transform: translateY(-2px);
+        }
+
+        .export-btn {
+          padding: 0.75rem 1.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .export-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .create-form-section {
+          margin-bottom: 2rem;
         }
 
         .form-card {
@@ -513,299 +777,359 @@ export default function WasteJobs() {
           backdrop-filter: blur(10px);
         }
 
-        h3 {
-          margin-top: 0;
+        .form-card h3 {
+          margin: 0 0 1.5rem 0;
           color: #fbbf24;
         }
 
         .validation-error {
-          padding: 1rem;
-          margin-bottom: 1.5rem;
+          padding: 0.75rem;
+          margin-bottom: 1rem;
           background: rgba(239, 68, 68, 0.2);
           border: 1px solid #ef4444;
           border-radius: 6px;
           color: #fca5a5;
-          font-weight: 500;
+          font-size: 0.9rem;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 1rem;
         }
 
         .form-group {
-          margin-bottom: 1.5rem;
-        }
-
-        label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-        }
-
-        .field-note {
-          margin-top: 0.5rem;
-          font-size: 0.9rem;
-          color: #fbbf24;
-          opacity: 0.8;
-        }
-
-        input, select, textarea {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          border-radius: 6px;
-          background: rgba(0, 0, 0, 0.2);
-          color: white;
-          font-size: 1rem;
-          font-family: inherit;
-        }
-
-        input::placeholder, textarea::placeholder {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .info-box {
-          margin: 1.5rem 0;
-          padding: 1rem;
-          background: rgba(251, 191, 36, 0.1);
-          border-left: 4px solid #fbbf24;
-          border-radius: 6px;
-        }
-
-        .info-box h4 {
-          margin-top: 0;
-          color: #fbbf24;
-        }
-
-        .properties-grid {
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
         }
 
-        .property {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.5rem 0;
-        }
-
-        .property-label {
+        .form-group label {
           font-weight: 500;
-          opacity: 0.8;
+          font-size: 0.9rem;
         }
 
-        .property-value {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+          padding: 0.75rem;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 6px;
+          background: rgba(0, 0, 0, 0.2);
+          color: white;
+          font-size: 0.95rem;
+          font-family: inherit;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .price-preview {
+          padding: 1rem;
+          background: rgba(251, 191, 36, 0.1);
+          border-left: 4px solid #fbbf24;
+          border-radius: 4px;
+          margin: 1rem 0;
           color: #fbbf24;
           font-weight: 600;
         }
 
-        .price-estimate {
-          margin: 1.5rem 0;
-          padding: 1.5rem;
-          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
-          border: 2px solid #fbbf24;
-          border-radius: 8px;
-          text-align: center;
+        .form-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: flex-end;
+          margin-top: 1.5rem;
         }
 
-        .price-estimate h4 {
-          margin: 0 0 0.5rem 0;
-          color: #fbbf24;
-        }
-
-        .price {
-          font-size: 2rem;
-          font-weight: bold;
-          color: #fbbf24;
-          margin: 0.5rem 0;
-        }
-
-        .price-gst {
-          font-size: 1.2rem;
-          opacity: 0.8;
+        .cancel-btn {
+          padding: 0.75rem 1.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
         }
 
         .submit-btn {
-          width: 100%;
-          padding: 1rem;
+          padding: 0.75rem 1.5rem;
           background: linear-gradient(45deg, #fbbf24, #f59e0b);
           border: none;
-          border-radius: 6px;
           color: #1e3a8a;
-          font-weight: bold;
-          font-size: 1.1rem;
+          border-radius: 6px;
           cursor: pointer;
-          transition: transform 0.2s;
+          font-weight: bold;
         }
 
-        .submit-btn:hover {
-          transform: translateY(-2px);
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 4rem 2rem;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .empty-state p {
-          margin: 0.5rem 0;
-          font-size: 1.1rem;
-          opacity: 0.8;
-        }
-
-        .jobs-container {
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
+        .submit-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .summary-cards {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 1.5rem;
+          margin-bottom: 2rem;
         }
 
         .summary-card {
           background: rgba(255, 255, 255, 0.1);
-          padding: 2rem;
+          padding: 1.5rem;
           border-radius: 12px;
           border: 1px solid rgba(255, 255, 255, 0.2);
           text-align: center;
         }
 
-        .summary-card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1rem;
+        .summary-label {
+          font-size: 0.9rem;
           opacity: 0.8;
+          margin-bottom: 0.5rem;
         }
 
         .summary-value {
           font-size: 2.5rem;
           font-weight: bold;
           color: #fbbf24;
-          margin-bottom: 0.5rem;
         }
 
-        .summary-subtitle {
-          font-size: 0.9rem;
+        .summary-value.pending {
+          color: #60a5fa;
+        }
+
+        .summary-value.approved {
+          color: #10b981;
+        }
+
+        .summary-value.rejected {
+          color: #ef4444;
+        }
+
+        .error-banner {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid #ef4444;
+          border-radius: 6px;
+          color: #fca5a5;
+        }
+
+        .tabs {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 1.5rem;
+          border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab {
+          padding: 0.75rem 1.5rem;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          color: white;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 500;
+          transition: all 0.3s;
           opacity: 0.7;
         }
 
-        .jobs-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
+        .tab:hover {
+          opacity: 1;
+          background: rgba(255, 255, 255, 0.05);
         }
 
-        .job-card {
+        .tab.active {
+          opacity: 1;
+          border-bottom-color: #fbbf24;
+          color: #fbbf24;
+          font-weight: 600;
+        }
+
+        .table-container {
           background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 12px;
-          padding: 1.5rem;
-          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          overflow: hidden;
         }
 
-        .job-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .loading-state,
+        .empty-state {
+          padding: 4rem 2rem;
+          text-align: center;
+          opacity: 0.8;
+        }
+
+        .data-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .data-table th {
+          padding: 1rem;
+          text-align: left;
+          font-weight: 600;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          opacity: 0.8;
+          border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.2);
+        }
+
+        .data-table td {
+          padding: 1rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          font-size: 0.9rem;
+        }
+
+        .data-table tr:hover {
+          background: rgba(255, 255, 255, 0.05);
         }
 
         .job-number {
-          font-size: 1.2rem;
-          font-weight: bold;
+          font-weight: 600;
           color: #fbbf24;
         }
 
-        .job-status {
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.9rem;
+        .status-chip {
+          display: inline-block;
+          padding: 0.35rem 0.75rem;
+          border-radius: 12px;
+          font-size: 0.8rem;
           font-weight: 600;
           text-transform: uppercase;
         }
 
-        .status-weighed {
+        .status-pending-approval {
           background: rgba(59, 130, 246, 0.2);
           color: #60a5fa;
           border: 1px solid #60a5fa;
         }
 
-        .status-processing {
-          background: rgba(251, 191, 36, 0.2);
-          color: #fbbf24;
-          border: 1px solid #fbbf24;
-        }
-
-        .status-completed {
+        .status-approved {
           background: rgba(16, 185, 129, 0.2);
           color: #10b981;
           border: 1px solid #10b981;
         }
 
-        .status-invoiced {
-          background: rgba(139, 92, 246, 0.2);
-          color: #a78bfa;
-          border: 1px solid #a78bfa;
+        .status-rejected {
+          background: rgba(239, 68, 68, 0.2);
+          color: #ef4444;
+          border: 1px solid #ef4444;
         }
 
-        .job-details {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          margin-bottom: 1rem;
+        .marketplace-chip {
+          display: inline-block;
+          padding: 0.35rem 0.75rem;
+          border-radius: 12px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
-        .detail-row {
+        .marketplace-not-listed {
+          background: rgba(107, 114, 128, 0.2);
+          color: #9ca3af;
+          border: 1px solid #9ca3af;
+        }
+
+        .marketplace-listed {
+          background: rgba(59, 130, 246, 0.2);
+          color: #60a5fa;
+          border: 1px solid #60a5fa;
+        }
+
+        .marketplace-sold {
+          background: rgba(16, 185, 129, 0.2);
+          color: #10b981;
+          border: 1px solid #10b981;
+        }
+
+        .action-select {
+          padding: 0.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          background: rgba(0, 0, 0, 0.3);
+          color: white;
+          font-size: 0.85rem;
+          cursor: pointer;
+        }
+
+        .pagination {
+          padding: 1.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.2);
         }
 
-        .detail-label {
-          font-weight: 500;
+        .pagination-info {
+          font-size: 0.9rem;
           opacity: 0.8;
         }
 
-        .detail-value {
-          color: #fbbf24;
-          font-weight: 600;
-        }
-
-        .job-footer {
-          padding-top: 1rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .job-price {
+        .pagination-controls {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 1rem;
         }
 
-        .price-label {
-          font-size: 1.1rem;
+        .pagination-controls label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+        }
+
+        .pagination-controls select {
+          padding: 0.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          background: rgba(0, 0, 0, 0.3);
+          color: white;
+          cursor: pointer;
+        }
+
+        .pagination-controls button {
+          padding: 0.5rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+
+        .pagination-controls button:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .pagination-controls button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .page-indicator {
+          font-size: 0.9rem;
           font-weight: 600;
-        }
-
-        .price-value {
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: #fbbf24;
         }
 
         .footer {
-          padding: 2rem;
+          padding: 1.5rem;
           text-align: center;
           background: rgba(0, 0, 0, 0.3);
           border-top: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .footer p {
-          margin: 0.5rem 0;
+          margin: 0;
           opacity: 0.8;
+          font-size: 0.9rem;
         }
 
         @media (max-width: 768px) {
@@ -819,19 +1143,31 @@ export default function WasteJobs() {
             align-items: flex-start;
           }
 
-          .logo h1 {
-            font-size: 2.5rem;
+          .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
           }
 
-          .detail-row {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.25rem;
+          .form-row {
+            grid-template-columns: 1fr;
           }
 
-          .job-header {
+          .summary-cards {
+            grid-template-columns: 1fr;
+          }
+
+          .data-table {
+            font-size: 0.8rem;
+          }
+
+          .data-table th,
+          .data-table td {
+            padding: 0.5rem;
+          }
+
+          .pagination {
             flex-direction: column;
-            align-items: flex-start;
             gap: 1rem;
           }
         }
