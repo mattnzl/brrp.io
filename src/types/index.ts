@@ -21,7 +21,6 @@ export enum WasteStreamType {
   SPENT_GRAIN = 'SPENT_GRAIN',
   APPLE_POMACE = 'APPLE_POMACE',
   GRAPE_MARC = 'GRAPE_MARC',
-  HOPS_RESIDUE = 'HOPS_RESIDUE',
   FISH_WASTE = 'FISH_WASTE',
 }
 
@@ -35,6 +34,19 @@ export enum NutrientValue {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
+}
+
+export interface WasteStreamTypeData {
+  id: string;
+  name: string;
+  description?: string;
+  unitOfMeasure: string;
+  pricePerUnit: number; // Base price excl GST
+  energyValue: EnergyValue;
+  nutrientValue: NutrientValue;
+  emissionFactor?: number; // Tonnes CO2eq per tonne of waste
+  isActive: boolean;
+  createdAt: Date;
 }
 
 export interface WasteStreamProperties {
@@ -56,6 +68,47 @@ export interface Customer {
   type: CustomerType;
   contactEmail?: string;
   contactPhone?: string;
+}
+
+/**
+ * Weighbridge Job - Core waste tracking entity
+ */
+export enum WeighbridgeJobStatus {
+  WEIGHED = 'WEIGHED', // Initial status after weighing
+  APPROVED = 'APPROVED', // Approved for processing
+  REJECTED = 'REJECTED', // Rejected due to contamination
+  INVOICED = 'INVOICED', // Included in monthly invoice
+}
+
+export interface WeighbridgeJob {
+  id: string;
+  jobNumber: string;
+  companyId: string;
+  truckId: string;
+  driverId?: string; // Manually assigned
+  wasteStreamTypeId: string;
+  
+  // Weight measurements
+  tareWeight?: number; // Empty truck weight
+  grossWeight: number; // Loaded truck weight
+  netWeight: number; // Waste weight (gross - tare)
+  
+  // Status and validation
+  status: WeighbridgeJobStatus;
+  isContaminated: boolean;
+  rejectionReason?: string;
+  
+  // Financial
+  unitPrice: number; // Price at time of job
+  totalPrice: number;
+  invoiceId?: string;
+  
+  // Metadata
+  notes?: string;
+  weighedAt: Date;
+  approvedAt?: Date;
+  approvedBy?: string; // User ID
+  createdAt: Date;
 }
 
 export interface WasteJob {
@@ -89,9 +142,9 @@ export enum WasteJobStatus {
  */
 
 export enum UserRole {
-  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
-  COMPANY_ADMIN = 'COMPANY_ADMIN',
-  OPERATOR = 'OPERATOR',
+  ADMIN = 'admin', // God privileges - full system access
+  CUSTOMER = 'customer', // Company user - manage drivers, trucks, view fees
+  DRIVER = 'driver', // Operational user - assigned to trucks/jobs
 }
 
 export interface User {
@@ -99,30 +152,57 @@ export interface User {
   username: string;
   email: string;
   role: UserRole;
-  companyId?: string; // Only for Company Admin and Operator
+  companyId?: string; // NULL for admin, required for customer/driver
   firstName: string;
   lastName: string;
   isActive: boolean;
   createdAt: Date;
-  createdBy?: string; // User ID of creator
+  updatedAt: Date;
 }
 
 export interface Company {
   id: string;
   name: string;
-  type: CustomerType;
+  businessNumber?: string;
   contactEmail: string;
   contactPhone: string;
   address?: string;
   isActive: boolean;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AuthSession {
   user: User;
-  company?: Company; // Only for Company Admin and Operator
+  company?: Company; // Only for customer and driver roles
   token: string;
   expiresAt: Date;
+}
+
+export interface Driver {
+  id: string;
+  userId?: string; // Link to user if they have login access
+  companyId: string;
+  firstName: string;
+  lastName: string;
+  driverLicenseNumber?: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Truck {
+  id: string;
+  licensePlate: string;
+  companyId: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  capacityTonnes?: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface WasteSource {
@@ -166,10 +246,115 @@ export interface SCADAMeasurement {
 }
 
 /**
- * Emissions Calculation Types
+ * Emissions Calculation Types (From SCADA via REST)
  */
 
 export interface EmissionsData {
+  id: string;
+  weighbridgeJobId?: string; // Link to specific job
+  
+  // Waste input
+  wasteVolumeTonnes: number;
+  wasteType: string;
+  
+  // Methane data (from SCADA)
+  methaneGeneratedM3?: number;
+  methaneDestroyedM3?: number;
+  
+  // Emissions calculations
+  co2EquivalentTonnes?: number; // Calculated from methane destroyed
+  emissionFactor?: number; // From waste stream type
+  grossEmissionsReduction?: number; // GER in tonnes CO2eq
+  
+  // SCADA metadata
+  scadaReadingTimestamp?: Date;
+  scadaSource?: string; // REST endpoint or system identifier
+  
+  createdAt: Date;
+}
+
+/**
+ * Energy Production Data (From BRRP plant)
+ * Admin-only visibility - NOT shown to customers
+ */
+
+export interface EnergyProduction {
+  id: string;
+  
+  // Energy output
+  electricityKwh?: number; // Electricity generated
+  processHeatMj?: number; // Heat generated
+  
+  // Time period
+  readingTimestamp: Date;
+  periodStart?: Date;
+  periodEnd?: Date;
+  
+  // Source
+  plantSource?: string; // BRRP plant identifier
+  dataSource?: string; // REST endpoint or system identifier
+  
+  createdAt: Date;
+}
+
+/**
+ * Invoice Types (Monthly aggregation for customers)
+ */
+
+export enum InvoiceStatus {
+  DRAFT = 'DRAFT',
+  ISSUED = 'ISSUED',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  companyId: string;
+  
+  // Invoice period
+  periodStart: Date;
+  periodEnd: Date;
+  
+  // Financial summary
+  subtotal: number;
+  gst: number;
+  total: number;
+  
+  // Waste summary
+  totalJobs: number;
+  totalWasteTonnes: number;
+  
+  // Status
+  status: InvoiceStatus;
+  issuedAt?: Date;
+  dueDate?: Date;
+  paidAt?: Date;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SCADAMeasurement {
+  id: string;
+  facilityId: string;
+  timestamp: Date;
+  wasteProcessed: number; // tonnes
+  methaneGenerated: number; // cubic meters
+  methaneDestroyed: number; // cubic meters
+  electricityProduced?: number; // kWh
+  processHeatProduced?: number; // MJ
+  location: GeoLocation;
+  immutable: boolean; // Once recorded, cannot be altered
+}
+
+/**
+ * Old Emissions Calculation Types - Kept for backward compatibility
+ */
+
+export interface EmissionsDataOld {
   id: string;
   scadaMeasurementId: string;
   methaneDestroyed: number; // m³
