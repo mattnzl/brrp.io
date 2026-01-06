@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { WasteStreamType, Customer, User, UserRole } from '../types';
 import { WasteJobsService } from '../services/wasteJobs';
@@ -50,6 +50,27 @@ export default function WasteJobs() {
   const customers = WasteJobsService.getAvailableCustomers();
   const wasteStreamProperties = WasteJobsService.getWasteStreamProperties();
 
+  const fetchWasteJobs = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const status = activeTab === 'All' ? '' : activeTab;
+      const response = await fetch(`/api/waste-jobs?status=${status}&page=${currentPage}&perPage=100`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch waste jobs');
+      }
+      
+      const data = await response.json();
+      setWasteJobs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load waste jobs');
+      console.error('Error fetching waste jobs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, currentPage]);
+
   useEffect(() => {
     const session = AuthService.getCurrentSession();
     if (!session) {
@@ -74,35 +95,14 @@ export default function WasteJobs() {
 
     // Fetch waste jobs from API
     fetchWasteJobs();
-  }, [router]);
-
-  const fetchWasteJobs = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const status = activeTab === 'All' ? '' : activeTab;
-      const response = await fetch(`/api/waste-jobs?status=${status}&page=${currentPage}&perPage=100`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch waste jobs');
-      }
-      
-      const data = await response.json();
-      setWasteJobs(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load waste jobs');
-      console.error('Error fetching waste jobs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [router, customers, fetchWasteJobs]);
 
   // Refetch when tab changes
   useEffect(() => {
     if (currentUser) {
       fetchWasteJobs();
     }
-  }, [activeTab]);
+  }, [activeTab, currentUser, fetchWasteJobs]);
 
   const handleLogout = () => {
     AuthService.logout();
