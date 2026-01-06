@@ -217,6 +217,245 @@ Validate against national carbon budget/NDC.
 
 ---
 
+### 6. Waste Jobs Service
+
+**Purpose**: Manage waste job creation from weighbridge input.
+
+#### Methods
+
+##### `getWasteStreamProperties(): Record<WasteStreamType, WasteStreamProperties>`
+Get waste stream properties including pricing.
+
+**Returns**: Map of waste stream types to their properties
+
+**Example**:
+```typescript
+import { WasteJobsService } from './services/wasteJobs';
+
+const properties = WasteJobsService.getWasteStreamProperties();
+// Returns: { COW_SHED_WASTE: { standardPrice: 210, ... }, ... }
+```
+
+##### `getWasteStreamName(type: WasteStreamType): string`
+Get friendly name for waste stream type.
+
+##### `createWasteJob(customer: Customer, wasteStream: WasteStreamType, truckRegistration: string, weighbridgeWeight: number, notes?: string): WasteJob`
+Create a new waste job from weighbridge input.
+
+**Parameters**:
+- `customer` (Customer): Customer information
+- `wasteStream` (WasteStreamType): Type of waste stream
+- `truckRegistration` (string): Truck registration number
+- `weighbridgeWeight` (number): Weight in tonnes
+- `notes` (string, optional): Additional notes
+
+**Returns**: Newly created waste job with auto-generated job number and calculated price
+
+##### `calculatePrice(wasteStream: WasteStreamType, weight: number): number`
+Calculate total price for a waste job.
+
+##### `updateJobStatus(job: WasteJob, status: WasteJobStatus): WasteJob`
+Update waste job status.
+
+##### `getAvailableCustomers(): Customer[]`
+Get all available customers.
+
+---
+
+## REST API Endpoints
+
+### Waste Jobs API
+
+#### POST /api/waste-jobs
+Create a new waste job.
+
+**Request Body**:
+```json
+{
+  "customer": {
+    "id": "cust-wmnz",
+    "name": "Waste Management NZ",
+    "type": "WASTE_MANAGEMENT_NZ"
+  },
+  "wasteStream": "COW_SHED_WASTE",
+  "truckRegistration": "ABC123",
+  "weighbridgeWeight": 25.5,
+  "notes": "Optional notes",
+  "companyId": "comp-001",
+  "companyName": "Aliminary"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid-here",
+  "jobNumber": "WJ-1704537600-ABC12",
+  "customerId": "cust-wmnz",
+  "customerName": "Waste Management NZ",
+  "customerType": "WASTE_MANAGEMENT_NZ",
+  "wasteStream": "COW_SHED_WASTE",
+  "truckRegistration": "ABC123",
+  "weighbridgeWeight": 25.5,
+  "status": "Pending Approval",
+  "totalPrice": 5355.00,
+  "notes": "Optional notes",
+  "companyId": "comp-001",
+  "companyName": "Aliminary",
+  "createdAt": "2024-01-06T12:00:00.000Z"
+}
+```
+
+**Error Responses**:
+- `400 Bad Request`: Missing required fields or invalid data
+- `500 Internal Server Error`: Database or server error
+
+#### GET /api/waste-jobs
+List waste jobs with optional filtering and pagination.
+
+**Query Parameters**:
+- `status` (string, optional): Filter by status (e.g., "Pending Approval", "Approved", "Rejected")
+- `companyId` (string, optional): Filter by company ID
+- `page` (number, optional): Page number (default: 1)
+- `perPage` (number, optional): Results per page (default: 50, max: 100)
+
+**Response** (200 OK):
+```json
+[
+  {
+    "id": "uuid-here",
+    "jobNumber": "WJ-1704537600-ABC12",
+    "customerId": "cust-wmnz",
+    "customerName": "Waste Management NZ",
+    "customerType": "WASTE_MANAGEMENT_NZ",
+    "wasteStream": "COW_SHED_WASTE",
+    "truckRegistration": "ABC123",
+    "weighbridgeWeight": 25.5,
+    "status": "Pending Approval",
+    "totalPrice": 5355.00,
+    "notes": "Optional notes",
+    "companyId": "comp-001",
+    "companyName": "Aliminary",
+    "createdAt": "2024-01-06T12:00:00.000Z"
+  }
+]
+```
+
+**Example Requests**:
+```bash
+# Get all waste jobs
+GET /api/waste-jobs
+
+# Get pending jobs
+GET /api/waste-jobs?status=Pending%20Approval
+
+# Get jobs for a specific company
+GET /api/waste-jobs?companyId=comp-001
+
+# Get paginated results
+GET /api/waste-jobs?page=2&perPage=25
+```
+
+#### PATCH /api/waste-jobs/[id]
+Update a waste job's status.
+
+**URL Parameters**:
+- `id` (string): Waste job UUID
+
+**Request Body**:
+```json
+{
+  "status": "Approved"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid-here",
+  "jobNumber": "WJ-1704537600-ABC12",
+  "customerId": "cust-wmnz",
+  "customerName": "Waste Management NZ",
+  "customerType": "WASTE_MANAGEMENT_NZ",
+  "wasteStream": "COW_SHED_WASTE",
+  "truckRegistration": "ABC123",
+  "weighbridgeWeight": 25.5,
+  "status": "Approved",
+  "totalPrice": 5355.00,
+  "notes": "Optional notes",
+  "companyId": "comp-001",
+  "companyName": "Aliminary",
+  "createdAt": "2024-01-06T12:00:00.000Z"
+}
+```
+
+**Error Responses**:
+- `400 Bad Request`: Invalid status or missing fields
+- `404 Not Found`: Waste job not found
+- `500 Internal Server Error`: Database or server error
+
+**Valid Status Values**:
+- "Pending Approval"
+- "Approved"
+- "Rejected"
+
+---
+
+## Data Types
+
+### Waste Jobs Types
+
+#### `WasteStreamType`
+```typescript
+enum WasteStreamType {
+  COW_SHED_WASTE = 'COW_SHED_WASTE',
+  FOOD_WASTE = 'FOOD_WASTE',
+  GREEN_WASTE = 'GREEN_WASTE',
+  SPENT_GRAIN = 'SPENT_GRAIN',
+  APPLE_POMACE = 'APPLE_POMACE',
+  GRAPE_MARC = 'GRAPE_MARC',
+  HOPS_RESIDUE = 'HOPS_RESIDUE',
+  FISH_WASTE = 'FISH_WASTE',
+}
+```
+
+#### `WasteJobStatus`
+```typescript
+enum WasteJobStatus {
+  PENDING_APPROVAL = 'Pending Approval',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+}
+```
+
+#### `CustomerType`
+```typescript
+enum CustomerType {
+  WASTE_MANAGEMENT_NZ = 'WASTE_MANAGEMENT_NZ',
+  ENVIRONZ = 'ENVIRONZ',
+}
+```
+
+#### `WasteJob`
+```typescript
+interface WasteJob {
+  id: string;
+  jobNumber: string;
+  customer: Customer;
+  wasteStream: WasteStreamType;
+  truckRegistration: string;
+  weighbridgeWeight: number; // in tonnes
+  timestamp: Date;
+  status: WasteJobStatus;
+  totalPrice?: number;
+  notes?: string;
+  companyId?: string;
+  companyName?: string;
+}
+```
+
+---
+
 ## Data Types
 
 ### Core Types

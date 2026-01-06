@@ -214,17 +214,83 @@ module.exports = {
 
 ---
 
-## Database Setup (Optional)
+## Database Setup (Required for Waste Jobs)
 
-If you add a database for persistent storage:
+### PostgreSQL Setup:
 
-### PostgreSQL:
+The waste jobs feature requires a PostgreSQL database for persistent storage.
+
+#### 1. Install PostgreSQL
+
+**On Ubuntu/Debian:**
 ```bash
-# Install pg
-npm install pg
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
+```
 
-# Connection example
-DATABASE_URL=postgresql://user:password@host:5432/brrp_io
+**On macOS (see DEPLOYMENT_MACOS.md for more details):**
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+```
+
+**On Windows:**
+Download and install from https://www.postgresql.org/download/windows/
+
+#### 2. Create Database and User
+
+```bash
+# Connect to PostgreSQL
+sudo -u postgres psql
+
+# Create database and user
+CREATE DATABASE brrp_io;
+CREATE USER brrp_user WITH ENCRYPTED PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE brrp_io TO brrp_user;
+
+# Exit psql
+\q
+```
+
+#### 3. Run Schema Migration
+
+Execute the SQL schema to create the waste_jobs table:
+
+```bash
+# Using psql
+psql -U brrp_user -d brrp_io -f schema.sql
+
+# Or using the connection string
+psql postgresql://brrp_user:your_secure_password@localhost:5432/brrp_io -f schema.sql
+```
+
+The schema creates:
+- `waste_jobs` table with all required fields
+- Indexes on `created_at`, `status`, and `company_id` for efficient queries
+
+#### 4. Configure Environment Variable
+
+Add to your `.env.local` file:
+
+```bash
+DATABASE_URL=postgresql://brrp_user:your_secure_password@localhost:5432/brrp_io
+```
+
+For production deployments, use your production database credentials.
+
+#### 5. Verify Connection
+
+```bash
+# Test connection
+psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM waste_jobs;"
+```
+
+### PostgreSQL Dependencies:
+
+The `pg` package is already included in package.json:
+
+```bash
+npm install  # Will install pg and @types/pg
 ```
 
 ### MongoDB:
