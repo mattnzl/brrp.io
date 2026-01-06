@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getPool } from '../../../lib/db';
 import { WasteJobsService } from '../../../services/wasteJobs';
+import { CompaniesService } from '../../../services/companies';
 import { WasteStreamType } from '../../../types';
 import { generateJobNumber } from '../../../utils/formatters';
 
@@ -23,7 +24,12 @@ type WasteJobData = {
   notes?: string;
   companyId?: string;
   companyName?: string;
+  driverId?: string;
+  driverName?: string;
+  isRejected?: boolean;
+  rejectionReason?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 type CreateWasteJobRequest = {
@@ -38,6 +44,8 @@ type CreateWasteJobRequest = {
   notes?: string;
   companyId?: string;
   companyName?: string;
+  driverId?: string;
+  validateLicensePlate?: boolean;
 };
 
 export default async function handler(
@@ -66,6 +74,22 @@ async function handlePost(
         error: 'Missing required fields',
         details: 'customer, wasteStream, and truckRegistration are required',
       });
+    }
+
+    // Validate license plate if requested
+    if (body.validateLicensePlate) {
+      const validation = await CompaniesService.validateLicensePlate(body.truckRegistration);
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'Invalid license plate',
+          details: 'License plate is not registered with any company',
+        });
+      }
+      // Use validated company data if not already provided
+      if (!body.companyId && validation.companyId) {
+        body.companyId = validation.companyId;
+        body.companyName = validation.companyName;
+      }
     }
 
     // Validate weighbridge weight
@@ -100,15 +124,17 @@ async function handlePost(
       `INSERT INTO waste_jobs (
         job_number, customer_id, customer_name, customer_type,
         waste_stream, truck_registration, weighbridge_weight,
-        status, total_price, notes, company_id, company_name
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        status, total_price, notes, company_id, company_name, driver_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING 
         id, job_number as "jobNumber", customer_id as "customerId", 
         customer_name as "customerName", customer_type as "customerType",
         waste_stream as "wasteStream", truck_registration as "truckRegistration",
         weighbridge_weight as "weighbridgeWeight", status, total_price as "totalPrice",
         notes, company_id as "companyId", company_name as "companyName", 
-        created_at as "createdAt"`,
+        driver_id as "driverId", is_rejected as "isRejected",
+        rejection_reason as "rejectionReason",
+        created_at as "createdAt", updated_at as "updatedAt"`,
       [
         jobNumber,
         body.customer.id,
@@ -122,6 +148,7 @@ async function handlePost(
         body.notes || null,
         body.companyId || null,
         body.companyName || null,
+        body.driverId || null,
       ]
     );
 
@@ -146,13 +173,17 @@ async function handleGet(
     // Build query with optional filters
     let query = `
       SELECT 
-        id, job_number as "jobNumber", customer_id as "customerId",
-        customer_name as "customerName", customer_type as "customerType",
-        waste_stream as "wasteStream", truck_registration as "truckRegistration",
-        weighbridge_weight as "weighbridgeWeight", status, total_price as "totalPrice",
-        notes, company_id as "companyId", company_name as "companyName",
-        created_at as "createdAt"
-      FROM waste_jobs
+        wj.id, wj.job_number as "jobNumber", wj.customer_id as "customerId",
+        wj.customer_name as "customerName", wj.customer_type as "customerType",
+        wj.waste_stream as "wasteStream", wj.truck_registration as "truckRegistration",
+        wj.weighbridge_weight as "weighbridgeWeight", wj.status, wj.total_price as "totalPrice",
+        wj.notes, wj.company_id as "companyId", wj.company_name as "companyName",
+        wj.driver_id as "driverId", wj.is_rejected as "isRejected",
+        wj.rejection_reason as "rejectionReason",
+        wj.created_at as "createdAt", wj.updated_at as "updatedAt",
+        u.first_name || ' ' || u.last_name as "driverName"
+      FROM waste_jobs wj
+      LEFT JOIN users u ON u.id = wj.driver_id
       WHERE 1=1
     `;
 
@@ -161,20 +192,20 @@ async function handleGet(
 
     // Add status filter
     if (status && typeof status === 'string' && status !== 'All') {
-      query += ` AND status = $${paramIndex}`;
+      query += ` AND wj.status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
     }
 
     // Add company filter
     if (companyId && typeof companyId === 'string') {
-      query += ` AND company_id = $${paramIndex}`;
+      query += ` AND wj.company_id = $${paramIndex}`;
       params.push(companyId);
       paramIndex++;
     }
 
     // Add ordering
-    query += ` ORDER BY created_at DESC`;
+    query += ` ORDER BY wj.created_at DESC`;
 
     // Add pagination
     const limit = Math.min(parseInt(perPage as string) || 50, 100);
