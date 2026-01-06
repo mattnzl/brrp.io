@@ -19,6 +19,15 @@ For detailed methodology, see [METHODOLOGY.md](METHODOLOGY.md).
 
 ## Key Features
 
+### 🚛 Waste Jobs Management (NEW)
+- **PostgreSQL Database**: Persistent storage for waste job records
+- **Weighbridge Input**: Create waste jobs from weighbridge measurements
+- **Multi-Status Workflow**: Pending Approval → Approved/Rejected status flow
+- **Company Scoping**: Automatic filtering by company for Company Admins and Operators
+- **Advanced UI**: Carbon Credits-style interface with tabs, data tables, and pagination
+- **Real-time Updates**: API-backed create, read, and update operations
+- **Export Functionality**: Export waste job reports (placeholder for future implementation)
+
 ### 🗑️ Waste-to-Methane Conversion
 - **Input Sources**: Sewage sludge, food waste, garden waste, landfill organic waste, and grape marc (seasonal)
 - **BRRP Processing**: Predefined waste processing pipeline based on Nelson Tech Demonstrator configuration
