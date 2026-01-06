@@ -6,6 +6,7 @@ import {
   EnergyValue,
   NutrientValue,
   Customer,
+  CustomerType,
 } from '../types';
 
 /**
@@ -149,14 +150,14 @@ export class WasteJobsService {
       {
         id: 'cust-wmnz',
         name: 'Waste Management NZ',
-        type: 'WASTE_MANAGEMENT_NZ' as any,
+        type: CustomerType.WASTE_MANAGEMENT_NZ,
         contactEmail: 'contact@wastemanagement.co.nz',
         contactPhone: '+64 9 123 4567',
       },
       {
         id: 'cust-environz',
         name: 'enviroNZ',
-        type: 'ENVIRONZ' as any,
+        type: CustomerType.ENVIRONZ,
         contactEmail: 'info@environz.co.nz',
         contactPhone: '+64 9 765 4321',
       },

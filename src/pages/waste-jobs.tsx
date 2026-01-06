@@ -13,6 +13,7 @@ export default function WasteJobs() {
   const [truckRegistration, setTruckRegistration] = useState('');
   const [weighbridgeWeight, setWeighbridgeWeight] = useState('');
   const [notes, setNotes] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const customers = WasteJobsService.getAvailableCustomers();
   const wasteStreamProperties = WasteJobsService.getWasteStreamProperties();
@@ -20,8 +21,18 @@ export default function WasteJobs() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedCustomer || !selectedWasteStream || !weighbridgeWeight) {
-      alert('Please fill in all required fields');
+    // Clear previous validation error
+    setValidationError('');
+    
+    // Validate form
+    if (!selectedCustomer || !selectedWasteStream || !weighbridgeWeight || !truckRegistration) {
+      setValidationError('Please fill in all required fields');
+      return;
+    }
+
+    const weight = parseFloat(weighbridgeWeight);
+    if (isNaN(weight) || weight <= 0) {
+      setValidationError('Please enter a valid weight greater than 0');
       return;
     }
 
@@ -29,7 +40,7 @@ export default function WasteJobs() {
       selectedCustomer,
       selectedWasteStream as WasteStreamType,
       truckRegistration,
-      parseFloat(weighbridgeWeight),
+      weight,
       notes
     );
 
@@ -40,6 +51,7 @@ export default function WasteJobs() {
     setTruckRegistration('');
     setWeighbridgeWeight('');
     setNotes('');
+    setValidationError('');
     
     // Switch to overview tab
     setActiveTab('overview');
@@ -85,6 +97,11 @@ export default function WasteJobs() {
               <h2>Weighbridge Input</h2>
               <div className="form-card">
                 <h3>Record New Waste Job</h3>
+                {validationError && (
+                  <div className="validation-error">
+                    {validationError}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">
                     <label>Customer *</label>
@@ -367,6 +384,16 @@ export default function WasteJobs() {
         h3 {
           margin-top: 0;
           color: #fbbf24;
+        }
+
+        .validation-error {
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid #ef4444;
+          border-radius: 6px;
+          color: #fca5a5;
+          font-weight: 500;
         }
 
         .form-group {
