@@ -111,7 +111,6 @@ async function handlePatch(
 
       // If approving, set approved_at timestamp
       if (status === 'APPROVED') {
-        paramCount++;
         updates.push(`approved_at = NOW()`);
         
         if (approved_by) {
@@ -135,7 +134,6 @@ async function handlePatch(
 
       // If contaminated, also reject the job
       if (is_contaminated) {
-        paramCount++;
         updates.push(`status = 'REJECTED'`);
         
         if (rejection_reason) {

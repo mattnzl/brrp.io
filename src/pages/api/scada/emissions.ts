@@ -45,10 +45,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     if (methane_destroyed_m3) {
       // Convert m³ of methane to tonnes CO2eq
-      // Methane density: ~0.717 kg/m³ at STP
-      // GWP of methane: 28 (IPCC AR5, 100-year)
-      const methane_tonnes = (methane_destroyed_m3 * 0.717) / 1000;
-      co2_equivalent_tonnes = methane_tonnes * 28;
+      // Constants based on IPCC AR5 standards:
+      // - Methane density: 0.717 kg/m³ at STP (Standard Temperature and Pressure)
+      // - GWP (Global Warming Potential) of methane: 28 (IPCC AR5, 100-year horizon)
+      // These values are industry standard and should only be changed if IPCC updates their standards
+      const METHANE_DENSITY_KG_PER_M3 = 0.717;
+      const METHANE_GWP_FACTOR = 28;
+      
+      const methane_tonnes = (methane_destroyed_m3 * METHANE_DENSITY_KG_PER_M3) / 1000;
+      co2_equivalent_tonnes = methane_tonnes * METHANE_GWP_FACTOR;
       
       // GER is the CO2 equivalent reduced
       gross_emissions_reduction = co2_equivalent_tonnes;
