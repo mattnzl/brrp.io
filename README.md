@@ -6,20 +6,35 @@
 
 BRRP.IO is a comprehensive platform for tracking, verifying, and trading carbon credits generated from waste-to-methane conversion processes. The system integrates real-time SCADA monitoring, IPCC-compliant emissions calculations, third-party verification, and blockchain-based NFT issuance.
 
+### Emissions Calculation Methodology
+
+The platform implements **Alimentary's methodology** for carbon reporting, adhering to:
+- International Greenhouse Gas Protocol (Corporate Accounting and Reporting Standard)
+- IPCC standards (collaboration with SeeGreen Solutions LLP)
+- New Zealand Government MFE guidance (Measuring Emissions Guidance - August 2022)
+
+**Core Formula**: `E = Q × F` (Emissions = Quantity × Factor)
+
+For detailed methodology, see [METHODOLOGY.md](METHODOLOGY.md).
+
 ## Key Features
 
 ### 🗑️ Waste-to-Methane Conversion
-- **Input Sources**: Manual input from sewerage sludge and landfill organic waste from councils and industries
-- **BRRP Processing**: Predefined waste processing pipeline
+- **Input Sources**: Sewage sludge, food waste, garden waste, landfill organic waste, and grape marc (seasonal)
+- **BRRP Processing**: Predefined waste processing pipeline based on Nelson Tech Demonstrator configuration
 - **SCADA Monitoring**: Real-time measurement of waste processing and methane destruction
-- **Energy Production**: Track electricity and process heat generation
+- **Energy Production**: Track electricity (1,200 kWh/day surplus) and process heat generation
 
 ### 📊 Emissions Tracking & Calculation
 - **IPCC Standards**: Compliance with ACM0022, AM0053, and AMS-I.D standards
-- **CO₂ Equivalence**: Precise calculation of CO2eq from methane destruction
-- **GWP Factor**: Uses IPCC AR5 Global Warming Potential (28 for methane)
-- **DEF Calculation**: Default Emission Factor as a function of energy, methane, and GWP
-- **GER Tracking**: Gross Emissions Reduction in tonnes CO2eq
+- **MFE Emission Factors**: Uses official NZ Government emission factors (August 2022, Table 34)
+  - Food Waste: 0.64 tonnes CO2eq/tonne
+  - Garden Waste: 0.18 tonnes CO2eq/tonne
+  - Sewage Sludge: 0.12 tonnes CO2eq/tonne
+  - Grape Marc: 0.18 tonnes CO2eq/tonne (working assumption)
+- **CO₂ Equivalence**: Precise calculation using E = Q × F formula
+- **GWP Factor**: Uses IPCC AR5 Global Warming Potential (CH₄ = 28, 100-year horizon)
+- **GER Tracking**: Gross Emissions Reduction from waste diversion
 - **Immutable Records**: Geolocated, time-based data that cannot be altered
 
 ### ✅ Independent Verification

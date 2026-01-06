@@ -74,9 +74,12 @@ export class WasteProcessingService {
     wasteType: WasteSourceType,
     quantity: number
   ): number {
-    const yieldFactors = {
+    const yieldFactors: Record<WasteSourceType, number> = {
       [WasteSourceType.SEWERAGE_SLUDGE]: 20, // m³ per tonne
       [WasteSourceType.LANDFILL_ORGANIC]: 100, // m³ per tonne
+      [WasteSourceType.FOOD_WASTE]: 80, // m³ per tonne
+      [WasteSourceType.GARDEN_WASTE]: 60, // m³ per tonne
+      [WasteSourceType.GRAPE_MARC]: 50, // m³ per tonne
     };
 
     return quantity * yieldFactors[wasteType];

@@ -5,6 +5,9 @@
 export enum WasteSourceType {
   SEWERAGE_SLUDGE = 'SEWERAGE_SLUDGE',
   LANDFILL_ORGANIC = 'LANDFILL_ORGANIC',
+  FOOD_WASTE = 'FOOD_WASTE',
+  GARDEN_WASTE = 'GARDEN_WASTE',
+  GRAPE_MARC = 'GRAPE_MARC',
 }
 
 export interface WasteSource {
