@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -26,6 +27,11 @@ export default function Home() {
             >
               Overview
             </button>
+            <Link href="/waste-jobs" passHref legacyBehavior>
+              <a className="nav-link">
+                <button className="nav-button">Waste Jobs 🚛</button>
+              </a>
+            </Link>
             <button 
               className={activeTab === 'waste' ? 'active' : ''} 
               onClick={() => setActiveTab('waste')}
@@ -132,6 +138,27 @@ export default function Home() {
           background: linear-gradient(45deg, #fbbf24, #f59e0b);
           border-color: #fbbf24;
           font-weight: bold;
+        }
+
+        .nav-link {
+          text-decoration: none;
+        }
+
+        .nav-button {
+          padding: 0.75rem 1.5rem;
+          background: linear-gradient(45deg, #10b981, #059669);
+          border: 1px solid #10b981;
+          color: white;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 1rem;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .nav-button:hover {
+          background: linear-gradient(45deg, #059669, #047857);
+          transform: translateY(-2px);
         }
 
         .main {

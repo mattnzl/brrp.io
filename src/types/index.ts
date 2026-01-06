@@ -10,6 +10,115 @@ export enum WasteSourceType {
   GRAPE_MARC = 'GRAPE_MARC',
 }
 
+/**
+ * Waste Job / Weighbridge Data Types
+ */
+
+export enum WasteStreamType {
+  COW_SHED_WASTE = 'COW_SHED_WASTE',
+  FOOD_WASTE = 'FOOD_WASTE',
+  GREEN_WASTE = 'GREEN_WASTE',
+  SPENT_GRAIN = 'SPENT_GRAIN',
+  APPLE_POMACE = 'APPLE_POMACE',
+  GRAPE_MARC = 'GRAPE_MARC',
+  HOPS_RESIDUE = 'HOPS_RESIDUE',
+  FISH_WASTE = 'FISH_WASTE',
+}
+
+export enum EnergyValue {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export enum NutrientValue {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export interface WasteStreamProperties {
+  type: WasteStreamType;
+  unitOfMeasure: string;
+  standardPrice: number; // excl GST
+  energyValue: EnergyValue;
+  nutrientValue: NutrientValue;
+}
+
+export enum CustomerType {
+  WASTE_MANAGEMENT_NZ = 'WASTE_MANAGEMENT_NZ',
+  ENVIRONZ = 'ENVIRONZ',
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  type: CustomerType;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+export interface WasteJob {
+  id: string;
+  jobNumber: string;
+  customer: Customer;
+  wasteStream: WasteStreamType;
+  truckRegistration: string;
+  weighbridgeWeight: number; // in tonnes
+  timestamp: Date;
+  status: WasteJobStatus;
+  totalPrice?: number; // calculated from weight * standardPrice
+  notes?: string;
+}
+
+export enum WasteJobStatus {
+  WEIGHED = 'WEIGHED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  INVOICED = 'INVOICED',
+}
+
+/**
+ * Authentication and User Management Types
+ */
+
+export enum UserRole {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  COMPANY_ADMIN = 'COMPANY_ADMIN',
+  OPERATOR = 'OPERATOR',
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  companyId?: string; // Only for Company Admin and Operator
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  createdAt: Date;
+  createdBy?: string; // User ID of creator
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  type: CustomerType;
+  contactEmail: string;
+  contactPhone: string;
+  address?: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface AuthSession {
+  user: User;
+  company?: Company; // Only for Company Admin and Operator
+  token: string;
+  expiresAt: Date;
+}
+
 export interface WasteSource {
   id: string;
   type: WasteSourceType;
