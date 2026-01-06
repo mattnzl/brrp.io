@@ -78,6 +78,47 @@ export enum WasteJobStatus {
   INVOICED = 'INVOICED',
 }
 
+/**
+ * Authentication and User Management Types
+ */
+
+export enum UserRole {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  COMPANY_ADMIN = 'COMPANY_ADMIN',
+  OPERATOR = 'OPERATOR',
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  companyId?: string; // Only for Company Admin and Operator
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  createdAt: Date;
+  createdBy?: string; // User ID of creator
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  type: CustomerType;
+  contactEmail: string;
+  contactPhone: string;
+  address?: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface AuthSession {
+  user: User;
+  company?: Company; // Only for Company Admin and Operator
+  token: string;
+  expiresAt: Date;
+}
+
 export interface WasteSource {
   id: string;
   type: WasteSourceType;

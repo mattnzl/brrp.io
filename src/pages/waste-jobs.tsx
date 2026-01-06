@@ -1,11 +1,16 @@
 import Head from 'next/head';
-import { useState } from 'react';
-import { WasteJob, WasteStreamType, Customer } from '../types';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { WasteJob, WasteStreamType, Customer, User, UserRole } from '../types';
 import { WasteJobsService } from '../services/wasteJobs';
+import { AuthService } from '../services/auth';
 
 export default function WasteJobs() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'input' | 'overview'>('input');
   const [wasteJobs, setWasteJobs] = useState<WasteJob[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentCompanyName, setCurrentCompanyName] = useState('');
   
   // Form state
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -17,6 +22,42 @@ export default function WasteJobs() {
 
   const customers = WasteJobsService.getAvailableCustomers();
   const wasteStreamProperties = WasteJobsService.getWasteStreamProperties();
+
+  useEffect(() => {
+    const session = AuthService.getCurrentSession();
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
+    setCurrentUser(session.user);
+    
+    // Set company name if user is associated with a company
+    if (session.company) {
+      setCurrentCompanyName(session.company.name);
+      // Pre-select customer for company admin and operator
+      if (session.user.role === UserRole.COMPANY_ADMIN || session.user.role === UserRole.OPERATOR) {
+        const matchingCustomer = customers.find(c => c.id === session.user.companyId);
+        if (matchingCustomer) {
+          setSelectedCustomer(matchingCustomer);
+        }
+      }
+    }
+  }, [router, customers]);
+
+  const handleLogout = () => {
+    AuthService.logout();
+    localStorage.removeItem('authSession');
+    router.push('/login');
+  };
+
+  const goToAdminDashboard = () => {
+    if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
+      router.push('/admin');
+    } else if (currentUser?.role === UserRole.COMPANY_ADMIN) {
+      router.push('/company-admin');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +87,10 @@ export default function WasteJobs() {
 
     setWasteJobs([newJob, ...wasteJobs]);
     
-    // Reset form
-    setSelectedCustomer(null);
+    // Reset form (but keep customer selected for company users)
+    if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
+      setSelectedCustomer(null);
+    }
     setSelectedWasteStream('');
     setTruckRegistration('');
     setWeighbridgeWeight('');
@@ -57,6 +100,10 @@ export default function WasteJobs() {
     // Switch to overview tab
     setActiveTab('overview');
   };
+
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
 
   const estimatedPrice = selectedWasteStream && weighbridgeWeight
     ? WasteJobsService.calculatePrice(selectedWasteStream as WasteStreamType, parseFloat(weighbridgeWeight) || 0)
@@ -74,23 +121,43 @@ export default function WasteJobs() {
         <header className="header">
           <div className="logo">
             <h1>BRRP.IO</h1>
-            <p className="tagline">Waste Jobs Management</p>
+            <p className="tagline">
+              Waste Jobs Management
+              {currentCompanyName && ` - ${currentCompanyName}`}
+            </p>
           </div>
-          <nav className="nav">
-            <button 
-              className={activeTab === 'input' ? 'active' : ''} 
-              onClick={() => setActiveTab('input')}
-            >
-              Weighbridge Input
-            </button>
-            <button 
-              className={activeTab === 'overview' ? 'active' : ''} 
-              onClick={() => setActiveTab('overview')}
-            >
-              Jobs Overview ({wasteJobs.length})
-            </button>
-          </nav>
+          <div className="user-info">
+            <span className="user-name">{currentUser.firstName} {currentUser.lastName}</span>
+            <span className="user-role">
+              {currentUser.role === UserRole.SYSTEM_ADMIN && 'System Admin'}
+              {currentUser.role === UserRole.COMPANY_ADMIN && 'Company Admin'}
+              {currentUser.role === UserRole.OPERATOR && 'Operator'}
+            </span>
+            <div className="button-group">
+              {(currentUser.role === UserRole.SYSTEM_ADMIN || currentUser.role === UserRole.COMPANY_ADMIN) && (
+                <button onClick={goToAdminDashboard} className="admin-btn">
+                  {currentUser.role === UserRole.SYSTEM_ADMIN ? 'Admin Dashboard' : 'Manage Operators'}
+                </button>
+              )}
+              <button onClick={handleLogout} className="logout-btn">Logout</button>
+            </div>
+          </div>
         </header>
+
+        <nav className="nav">
+          <button 
+            className={activeTab === 'input' ? 'active' : ''} 
+            onClick={() => setActiveTab('input')}
+          >
+            Weighbridge Input
+          </button>
+          <button 
+            className={activeTab === 'overview' ? 'active' : ''} 
+            onClick={() => setActiveTab('overview')}
+          >
+            Jobs Overview ({wasteJobs.length})
+          </button>
+        </nav>
 
         <main className="main">
           {activeTab === 'input' && (
@@ -113,6 +180,7 @@ export default function WasteJobs() {
                         setSelectedCustomer(customer || null);
                       }}
                       required
+                      disabled={currentUser.role !== UserRole.SYSTEM_ADMIN}
                     >
                       <option value="">Select customer...</option>
                       {customers.map(customer => (
@@ -121,6 +189,11 @@ export default function WasteJobs() {
                         </option>
                       ))}
                     </select>
+                    {(currentUser.role === UserRole.COMPANY_ADMIN || currentUser.role === UserRole.OPERATOR) && (
+                      <div className="field-note">
+                        Your company is automatically selected
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -311,6 +384,9 @@ export default function WasteJobs() {
           padding: 2rem;
           background: rgba(0, 0, 0, 0.3);
           border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .logo h1 {
@@ -329,8 +405,63 @@ export default function WasteJobs() {
           color: #fbbf24;
         }
 
+        .user-info {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 0.5rem;
+        }
+
+        .user-name {
+          font-weight: 600;
+          font-size: 1.1rem;
+        }
+
+        .user-role {
+          font-size: 0.9rem;
+          opacity: 0.8;
+        }
+
+        .button-group {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .admin-btn {
+          padding: 0.5rem 1rem;
+          background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+          border: none;
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .admin-btn:hover {
+          transform: translateY(-2px);
+        }
+
+        .logout-btn {
+          padding: 0.5rem 1rem;
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid #ef4444;
+          color: #fca5a5;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+          background: rgba(239, 68, 68, 0.3);
+        }
+
         .nav {
-          margin-top: 2rem;
+          margin-top: 0;
+          padding: 1rem 2rem;
+          background: rgba(0, 0, 0, 0.2);
           display: flex;
           gap: 1rem;
           flex-wrap: wrap;
@@ -405,6 +536,13 @@ export default function WasteJobs() {
           display: block;
           margin-bottom: 0.5rem;
           font-weight: 500;
+        }
+
+        .field-note {
+          margin-top: 0.5rem;
+          font-size: 0.9rem;
+          color: #fbbf24;
+          opacity: 0.8;
         }
 
         input, select, textarea {
@@ -671,6 +809,20 @@ export default function WasteJobs() {
         }
 
         @media (max-width: 768px) {
+          .header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+          }
+
+          .user-info {
+            align-items: flex-start;
+          }
+
+          .logo h1 {
+            font-size: 2.5rem;
+          }
+
           .detail-row {
             flex-direction: column;
             align-items: flex-start;
