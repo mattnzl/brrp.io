@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getPool } from '../../../lib/db';
-import { WasteJobsService } from '../../../services/wasteJobs';
+import { WasteJobsServerService } from '../../../services/wasteJobsServer';
 
 type ErrorResponse = {
   error: string;
@@ -70,7 +70,7 @@ export default async function handler(
         });
       }
 
-      const success = await WasteJobsService.rejectWasteJob(id, body.rejectionReason);
+      const success = await WasteJobsServerService.rejectWasteJob(id, body.rejectionReason);
       if (!success) {
         return res.status(404).json({
           error: 'Job not found',
@@ -104,7 +104,7 @@ export default async function handler(
 
     // Handle driver assignment
     if (body.driverId) {
-      const success = await WasteJobsService.assignDriver(id, body.driverId);
+      const success = await WasteJobsServerService.assignDriver(id, body.driverId);
       if (!success) {
         return res.status(404).json({
           error: 'Job not found',
