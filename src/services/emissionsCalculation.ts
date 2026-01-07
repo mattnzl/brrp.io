@@ -142,7 +142,7 @@ export class EmissionsCalculationService {
       
       // Waste input fields - use provided data or defaults for SCADA-only calculations
       wasteVolumeTonnes: wasteData?.volumeTonnes ?? 0,
-      wasteType: wasteData?.type ?? 'UNKNOWN',
+      wasteType: wasteData?.type ?? 'SCADA_ONLY', // Indicates calculation from SCADA without waste job data
       
       // Methane data
       methaneDestroyed: scadaData.methaneDestroyed,

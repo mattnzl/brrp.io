@@ -85,7 +85,9 @@ export default function WasteJobs() {
       setCurrentCompanyName(session.company.name);
       setCurrentCompanyId(session.company.id);
       // Note: Customer selection is independent of user's company
-      // Users should manually select the customer (waste collection company) for each job
+      // The "Customer" here refers to waste collection companies (Waste Management NZ, enviroNZ)
+      // which are separate entities from the user's organization
+      // Users must manually select the appropriate waste collection customer for each job
     }
 
     // Fetch waste jobs from API
