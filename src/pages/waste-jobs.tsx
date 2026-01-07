@@ -84,13 +84,10 @@ export default function WasteJobs() {
     if (session.company) {
       setCurrentCompanyName(session.company.name);
       setCurrentCompanyId(session.company.id);
-      // Pre-select customer for company admin and operator based on company type
-      if (session.user.role === UserRole.COMPANY_ADMIN || session.user.role === UserRole.OPERATOR) {
-        const matchingCustomer = customers.find(c => c.type === session.company?.type);
-        if (matchingCustomer) {
-          setSelectedCustomer(matchingCustomer);
-        }
-      }
+      // Note: Customer selection is independent of user's company
+      // The "Customer" here refers to waste collection companies (Waste Management NZ, enviroNZ)
+      // which are separate entities from the user's organization
+      // Users must manually select the appropriate waste collection customer for each job
     }
 
     // Fetch waste jobs from API
@@ -115,9 +112,9 @@ export default function WasteJobs() {
   };
 
   const goToAdminDashboard = () => {
-    if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
+    if (currentUser?.role === UserRole.ADMIN) {
       router.push('/admin');
-    } else if (currentUser?.role === UserRole.COMPANY_ADMIN) {
+    } else if (currentUser?.role === UserRole.CUSTOMER) {
       router.push('/company-admin');
     }
   };
@@ -163,7 +160,7 @@ export default function WasteJobs() {
       }
 
       // Reset form
-      if (currentUser?.role === UserRole.SYSTEM_ADMIN) {
+      if (currentUser?.role === UserRole.ADMIN) {
         setSelectedCustomer(null);
       }
       setSelectedWasteStream('');
@@ -268,15 +265,16 @@ export default function WasteJobs() {
           <div className="user-info">
             <span className="user-name">{currentUser.firstName} {currentUser.lastName}</span>
             <span className="user-role">
-              {currentUser.role === UserRole.SYSTEM_ADMIN && 'System Admin'}
-              {currentUser.role === UserRole.COMPANY_ADMIN && 'Company Admin'}
-              {currentUser.role === UserRole.OPERATOR && 'Operator'}
+              {/* Display friendly role names - CUSTOMER role represents Company Admins */}
+              {currentUser.role === UserRole.ADMIN && 'System Admin'}
+              {currentUser.role === UserRole.CUSTOMER && 'Company Admin'}
+              {currentUser.role === UserRole.DRIVER && 'Driver'}
             </span>
             <div className="button-group">
               <button onClick={goToHome} className="nav-btn">Home</button>
-              {(currentUser.role === UserRole.SYSTEM_ADMIN || currentUser.role === UserRole.COMPANY_ADMIN) && (
+              {(currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.CUSTOMER) && (
                 <button onClick={goToAdminDashboard} className="admin-btn">
-                  {currentUser.role === UserRole.SYSTEM_ADMIN ? 'Admin Dashboard' : 'Manage Operators'}
+                  {currentUser.role === UserRole.ADMIN ? 'Admin Dashboard' : 'Manage Company'}
                 </button>
               )}
               <button onClick={handleLogout} className="logout-btn">Logout</button>
@@ -321,7 +319,7 @@ export default function WasteJobs() {
                           setSelectedCustomer(customer || null);
                         }}
                         required
-                        disabled={currentUser.role !== UserRole.SYSTEM_ADMIN}
+                        disabled={currentUser.role !== UserRole.ADMIN}
                       >
                         <option value="">Select customer...</option>
                         {customers.map(customer => (
