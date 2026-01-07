@@ -14,8 +14,10 @@ CREATE TABLE IF NOT EXISTS companies (
     contact_email TEXT NOT NULL,
     contact_phone TEXT NOT NULL,
     address TEXT,
+    logo_url TEXT, -- Company logo image URL
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create index on company name
@@ -36,8 +38,10 @@ CREATE TABLE IF NOT EXISTS users (
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
+    photo_url TEXT, -- User profile photo URL
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
 

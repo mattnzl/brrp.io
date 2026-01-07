@@ -102,8 +102,10 @@ export interface User {
   companyId?: string; // Only for Company Admin and Operator
   firstName: string;
   lastName: string;
+  photoUrl?: string; // User profile photo URL
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date;
   createdBy?: string; // User ID of creator
 }
 
@@ -114,8 +116,10 @@ export interface Company {
   contactEmail: string;
   contactPhone: string;
   address?: string;
+  logoUrl?: string; // Company logo URL
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface AuthSession {

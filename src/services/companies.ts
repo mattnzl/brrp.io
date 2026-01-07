@@ -15,8 +15,9 @@ export class CompaniesService {
     const result = await pool.query(`
       SELECT 
         id, name, type, contact_email as "contactEmail",
-        contact_phone as "contactPhone", address, is_active as "isActive",
-        created_at as "createdAt"
+        contact_phone as "contactPhone", address, logo_url as "logoUrl",
+        is_active as "isActive", created_at as "createdAt",
+        updated_at as "updatedAt"
       FROM companies
       WHERE is_active = true
       ORDER BY name ASC
@@ -34,8 +35,9 @@ export class CompaniesService {
       `
       SELECT 
         id, name, type, contact_email as "contactEmail",
-        contact_phone as "contactPhone", address, is_active as "isActive",
-        created_at as "createdAt"
+        contact_phone as "contactPhone", address, logo_url as "logoUrl",
+        is_active as "isActive", created_at as "createdAt",
+        updated_at as "updatedAt"
       FROM companies
       WHERE id = $1
     `,
@@ -57,19 +59,21 @@ export class CompaniesService {
     type: CustomerType,
     contactEmail: string,
     contactPhone: string,
-    address?: string
+    address?: string,
+    logoUrl?: string
   ): Promise<Company> {
     const pool = getPool();
     const result = await pool.query(
       `
-      INSERT INTO companies (name, type, contact_email, contact_phone, address, is_active)
-      VALUES ($1, $2, $3, $4, $5, true)
+      INSERT INTO companies (name, type, contact_email, contact_phone, address, logo_url, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, true)
       RETURNING 
         id, name, type, contact_email as "contactEmail",
-        contact_phone as "contactPhone", address, is_active as "isActive",
-        created_at as "createdAt"
+        contact_phone as "contactPhone", address, logo_url as "logoUrl",
+        is_active as "isActive", created_at as "createdAt",
+        updated_at as "updatedAt"
     `,
-      [name, type, contactEmail, contactPhone, address || null]
+      [name, type, contactEmail, contactPhone, address || null, logoUrl || null]
     );
 
     return result.rows[0];
@@ -85,6 +89,7 @@ export class CompaniesService {
       contactEmail?: string;
       contactPhone?: string;
       address?: string;
+      logoUrl?: string;
       isActive?: boolean;
     }
   ): Promise<Company | null> {
@@ -112,6 +117,11 @@ export class CompaniesService {
       values.push(updates.address);
       paramIndex++;
     }
+    if (updates.logoUrl !== undefined) {
+      fields.push(`logo_url = $${paramIndex}`);
+      values.push(updates.logoUrl);
+      paramIndex++;
+    }
     if (updates.isActive !== undefined) {
       fields.push(`is_active = $${paramIndex}`);
       values.push(updates.isActive);
@@ -122,6 +132,7 @@ export class CompaniesService {
       return this.getCompanyById(id);
     }
 
+    fields.push(`updated_at = NOW()`);
     values.push(id);
 
     const pool = getPool();
@@ -132,8 +143,9 @@ export class CompaniesService {
       WHERE id = $${paramIndex}
       RETURNING 
         id, name, type, contact_email as "contactEmail",
-        contact_phone as "contactPhone", address, is_active as "isActive",
-        created_at as "createdAt"
+        contact_phone as "contactPhone", address, logo_url as "logoUrl",
+        is_active as "isActive", created_at as "createdAt",
+        updated_at as "updatedAt"
     `,
       values
     );
