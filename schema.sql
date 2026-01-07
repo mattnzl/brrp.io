@@ -295,3 +295,30 @@ LEFT JOIN weighbridge_jobs wj ON wst.id = wj.waste_stream_type_id
 LEFT JOIN emissions_data ed ON wj.id = ed.weighbridge_job_id
 WHERE wst.is_active = true
 GROUP BY wst.id, wst.name;
+
+-- =============================================
+-- LEGACY WASTE JOBS TABLE (For backward compatibility)
+-- =============================================
+-- This table supports the legacy waste-jobs.tsx UI
+-- New implementations should use weighbridge_jobs instead
+
+CREATE TABLE IF NOT EXISTS waste_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_number TEXT NOT NULL UNIQUE,
+    customer_id TEXT NOT NULL,
+    customer_name TEXT NOT NULL,
+    customer_type TEXT NOT NULL,
+    waste_stream TEXT NOT NULL,
+    truck_registration TEXT NOT NULL,
+    weighbridge_weight NUMERIC(12,2) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending Approval',
+    total_price NUMERIC(14,2) NOT NULL,
+    notes TEXT,
+    company_id TEXT,
+    company_name TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_waste_jobs_status ON waste_jobs(status);
+CREATE INDEX idx_waste_jobs_created_at ON waste_jobs(created_at DESC);
+CREATE INDEX idx_waste_jobs_company_id ON waste_jobs(company_id);
