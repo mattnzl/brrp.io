@@ -86,7 +86,7 @@ export default function WeighbridgePage() {
 
   useEffect(() => {
     const session = AuthService.getCurrentSession();
-    if (!session || session.user.role === UserRole.CUSTOMER) {
+    if (!session || session.user.role === UserRole.CUSTOMER || session.user.role === UserRole.DRIVER) {
       router.push('/login');
       return;
     }
