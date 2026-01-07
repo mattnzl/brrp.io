@@ -100,12 +100,11 @@ export default function WeighbridgePage() {
 
   const fetchCompanies = async () => {
     try {
-      // For now, use hardcoded data - in production this would be an API call
-      setCompanies([
-        { id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', name: 'Waste Management NZ' },
-        { id: 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', name: 'EnviroNZ' },
-        { id: 'c3d4e5f6-a7b8-9012-3456-789012cdef01', name: 'GreenCycle Nelson' },
-      ]);
+      const response = await fetch('/api/companies');
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data);
+      }
     } catch (err) {
       console.error('Error fetching companies:', err);
     }
@@ -113,16 +112,11 @@ export default function WeighbridgePage() {
 
   const fetchWasteStreamTypes = async () => {
     try {
-      // For now, use hardcoded data - in production this would be an API call
-      setWasteStreamTypes([
-        { id: '1', name: 'COW_SHED_WASTE', description: 'Dairy farm effluent and manure', unit_of_measure: 'tonnes', price_per_unit: 85.00, energy_value: 'MEDIUM', nutrient_value: 'HIGH' },
-        { id: '2', name: 'FOOD_WASTE', description: 'Commercial and residential food waste', unit_of_measure: 'tonnes', price_per_unit: 150.00, energy_value: 'HIGH', nutrient_value: 'MEDIUM' },
-        { id: '3', name: 'GREEN_WASTE', description: 'Garden and yard waste', unit_of_measure: 'tonnes', price_per_unit: 75.00, energy_value: 'LOW', nutrient_value: 'MEDIUM' },
-        { id: '4', name: 'SPENT_GRAIN', description: 'Brewery spent grain', unit_of_measure: 'tonnes', price_per_unit: 65.00, energy_value: 'MEDIUM', nutrient_value: 'HIGH' },
-        { id: '5', name: 'APPLE_POMACE', description: 'Apple processing residue', unit_of_measure: 'tonnes', price_per_unit: 70.00, energy_value: 'MEDIUM', nutrient_value: 'MEDIUM' },
-        { id: '6', name: 'GRAPE_MARC', description: 'Wine grape processing residue', unit_of_measure: 'tonnes', price_per_unit: 70.00, energy_value: 'MEDIUM', nutrient_value: 'MEDIUM' },
-        { id: '7', name: 'FISH_WASTE', description: 'Seafood processing waste', unit_of_measure: 'tonnes', price_per_unit: 120.00, energy_value: 'HIGH', nutrient_value: 'HIGH' },
-      ]);
+      const response = await fetch('/api/waste-stream-types');
+      if (response.ok) {
+        const data = await response.json();
+        setWasteStreamTypes(data);
+      }
     } catch (err) {
       console.error('Error fetching waste stream types:', err);
     }

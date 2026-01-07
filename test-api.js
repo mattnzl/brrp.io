@@ -2,8 +2,9 @@
  * API Integration Test Script
  * Tests all backend API endpoints with demo data
  * 
+ * Requirements: Node.js 18+ (uses native fetch API)
  * Run with: node test-api.js
- * Requires: Node.js 18+, PostgreSQL with seed data loaded
+ * Requires: PostgreSQL with seed data loaded
  */
 
 const API_BASE = process.env.API_BASE || 'http://localhost:3000';
@@ -75,6 +76,20 @@ async function runTests() {
   }
   
   console.log('✅ Server is running');
+  
+  console.log('\n\n--- COMPANIES API ---');
+  await testEndpoint(
+    'List all companies',
+    'GET',
+    '/api/companies'
+  );
+  
+  console.log('\n\n--- WASTE STREAM TYPES API ---');
+  await testEndpoint(
+    'List all waste stream types',
+    'GET',
+    '/api/waste-stream-types'
+  );
   
   // Test Trucks API
   console.log('\n\n--- TRUCKS API ---');
