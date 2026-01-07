@@ -42,11 +42,11 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO drivers (id, user_id, company_id, first_name, last_name, driver_license_number, phone, is_active) VALUES
 -- Drivers with user accounts
-('d1111111-1111-1111-1111-111111111111', '55555555-5555-5555-5555-555555555555', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Bob', 'Taylor', 'DL123456', '+64 21 111 2222', true),
-('d2222222-2222-2222-2222-222222222222', '66666666-6666-6666-6666-666666666666', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Emma', 'Davis', 'DL234567', '+64 21 222 3333', true),
+('a1111111-1111-1111-1111-111111111111', '55555555-5555-5555-5555-555555555555', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Bob', 'Taylor', 'DL123456', '+64 21 111 2222', true),
+('a2222222-2222-2222-2222-222222222222', '66666666-6666-6666-6666-666666666666', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Emma', 'Davis', 'DL234567', '+64 21 222 3333', true),
 -- Drivers without user accounts (manual only)
-('d3333333-3333-3333-3333-333333333333', NULL, 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'James', 'Wilson', 'DL345678', '+64 21 333 4444', true),
-('d4444444-4444-4444-4444-444444444444', NULL, 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Lisa', 'Brown', 'DL456789', '+64 21 444 5555', true)
+('a3333333-3333-3333-3333-333333333333', NULL, 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'James', 'Wilson', 'DL345678', '+64 21 333 4444', true),
+('a4444444-4444-4444-4444-444444444444', NULL, 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Lisa', 'Brown', 'DL456789', '+64 21 444 5555', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================
@@ -55,15 +55,15 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO trucks (id, license_plate, company_id, make, model, year, capacity_tonnes, is_active) VALUES
 -- Waste Management NZ trucks
-('t1111111-1111-1111-1111-111111111111', 'ABC123', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Isuzu', 'FVZ1400', 2020, 15.0, true),
-('t2222222-2222-2222-2222-222222222222', 'DEF456', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Hino', '500 Series', 2021, 18.0, true),
-('t3333333-3333-3333-3333-333333333333', 'GHI789', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Isuzu', 'FVZ1400', 2019, 15.0, true),
+('11111111-1111-1111-1111-111111111111', 'ABC123', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Isuzu', 'FVZ1400', 2020, 15.0, true),
+('22222222-2222-2222-2222-222222222222', 'DEF456', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Hino', '500 Series', 2021, 18.0, true),
+('33333333-3333-3333-3333-333333333333', 'GHI789', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 'Isuzu', 'FVZ1400', 2019, 15.0, true),
 -- EnviroNZ trucks
-('t4444444-4444-4444-4444-444444444444', 'JKL012', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Scania', 'P-Series', 2022, 20.0, true),
-('t5555555-5555-5555-5555-555555555555', 'MNO345', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Volvo', 'FE', 2021, 18.0, true),
+('44444444-4444-4444-4444-444444444444', 'JKL012', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Scania', 'P-Series', 2022, 20.0, true),
+('55555555-5555-5555-5555-555555555555', 'MNO345', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 'Volvo', 'FE', 2021, 18.0, true),
 -- GreenCycle Nelson trucks
-('t6666666-6666-6666-6666-666666666666', 'PQR678', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Mitsubishi', 'Fuso Fighter', 2020, 12.0, true),
-('t7777777-7777-7777-7777-777777777777', 'STU901', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Isuzu', 'NQR', 2022, 10.0, true)
+('66666666-6666-6666-6666-666666666666', 'PQR678', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Mitsubishi', 'Fuso Fighter', 2020, 12.0, true),
+('77777777-7777-7777-7777-777777777777', 'STU901', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 'Isuzu', 'NQR', 2022, 10.0, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================
@@ -89,24 +89,24 @@ BEGIN
 
     -- Recent jobs (last 7 days) - APPROVED
     INSERT INTO weighbridge_jobs (id, job_number, company_id, truck_id, driver_id, waste_stream_type_id, tare_weight, gross_weight, net_weight, status, is_contaminated, unit_price, total_price, notes, weighed_at, approved_at, approved_by) VALUES
-    ('w1111111-1111-1111-1111-111111111111', 'WB-' || to_char(NOW() - INTERVAL '1 day', 'YYYYMMDD') || '-A001', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 't1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', cow_shed_id, 8.5, 28.3, 19.8, 'APPROVED', false, 85.00, 1683.00, 'Clean load from Tasman dairy farm', NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours', '11111111-1111-1111-1111-111111111111'),
-    ('w2222222-2222-2222-2222-222222222222', 'WB-' || to_char(NOW() - INTERVAL '1 day', 'YYYYMMDD') || '-B002', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 't4444444-4444-4444-4444-444444444444', 'd2222222-2222-2222-2222-222222222222', food_waste_id, 9.2, 31.5, 22.3, 'APPROVED', false, 150.00, 3345.00, 'Restaurant food waste collection', NOW() - INTERVAL '1 day', NOW() - INTERVAL '22 hours', '11111111-1111-1111-1111-111111111111'),
-    ('w3333333-3333-3333-3333-333333333333', 'WB-' || to_char(NOW() - INTERVAL '2 days', 'YYYYMMDD') || '-C003', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 't6666666-6666-6666-6666-666666666666', 'd4444444-4444-4444-4444-444444444444', green_waste_id, 5.8, 18.9, 13.1, 'APPROVED', false, 75.00, 982.50, 'Garden waste from residential areas', NOW() - INTERVAL '2 days', NOW() - INTERVAL '47 hours', '11111111-1111-1111-1111-111111111111'),
-    ('w4444444-4444-4444-4444-444444444444', 'WB-' || to_char(NOW() - INTERVAL '3 days', 'YYYYMMDD') || '-D004', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 't2222222-2222-2222-2222-222222222222', 'd3333333-3333-3333-3333-333333333333', spent_grain_id, 8.0, 24.8, 16.8, 'APPROVED', false, 65.00, 1092.00, 'Spent grain from McCashin''s Brewery', NOW() - INTERVAL '3 days', NOW() - INTERVAL '71 hours', '11111111-1111-1111-1111-111111111111');
+    ('e1111111-1111-1111-1111-111111111111', 'WB-' || to_char(NOW() - INTERVAL '1 day', 'YYYYMMDD') || '-A001', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', cow_shed_id, 8.5, 28.3, 19.8, 'APPROVED', false, 85.00, 1683.00, 'Clean load from Tasman dairy farm', NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours', '11111111-1111-1111-1111-111111111111'),
+    ('e2222222-2222-2222-2222-222222222222', 'WB-' || to_char(NOW() - INTERVAL '1 day', 'YYYYMMDD') || '-B002', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', '44444444-4444-4444-4444-444444444444', 'a2222222-2222-2222-2222-222222222222', food_waste_id, 9.2, 31.5, 22.3, 'APPROVED', false, 150.00, 3345.00, 'Restaurant food waste collection', NOW() - INTERVAL '1 day', NOW() - INTERVAL '22 hours', '11111111-1111-1111-1111-111111111111'),
+    ('e3333333-3333-3333-3333-333333333333', 'WB-' || to_char(NOW() - INTERVAL '2 days', 'YYYYMMDD') || '-C003', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', '66666666-6666-6666-6666-666666666666', 'a4444444-4444-4444-4444-444444444444', green_waste_id, 5.8, 18.9, 13.1, 'APPROVED', false, 75.00, 982.50, 'Garden waste from residential areas', NOW() - INTERVAL '2 days', NOW() - INTERVAL '47 hours', '11111111-1111-1111-1111-111111111111'),
+    ('e4444444-4444-4444-4444-444444444444', 'WB-' || to_char(NOW() - INTERVAL '3 days', 'YYYYMMDD') || '-D004', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', '22222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', spent_grain_id, 8.0, 24.8, 16.8, 'APPROVED', false, 65.00, 1092.00, 'Spent grain from McCashin''s Brewery', NOW() - INTERVAL '3 days', NOW() - INTERVAL '71 hours', '11111111-1111-1111-1111-111111111111');
 
     -- Jobs awaiting approval - WEIGHED
     INSERT INTO weighbridge_jobs (id, job_number, company_id, truck_id, driver_id, waste_stream_type_id, tare_weight, gross_weight, net_weight, status, is_contaminated, unit_price, total_price, notes, weighed_at) VALUES
-    ('w5555555-5555-5555-5555-555555555555', 'WB-' || to_char(NOW(), 'YYYYMMDD') || '-E005', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 't5555555-5555-5555-5555-555555555555', 'd2222222-2222-2222-2222-222222222222', apple_pomace_id, 9.5, 26.2, 16.7, 'WEIGHED', false, 70.00, 1169.00, 'Apple pomace from Tasman Orchards', NOW() - INTERVAL '2 hours'),
-    ('w6666666-6666-6666-6666-666666666666', 'WB-' || to_char(NOW(), 'YYYYMMDD') || '-F006', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 't3333333-3333-3333-3333-333333333333', 'd1111111-1111-1111-1111-111111111111', cow_shed_id, 8.8, 30.5, 21.7, 'WEIGHED', false, 85.00, 1844.50, 'Dairy effluent - large farm delivery', NOW() - INTERVAL '1 hour');
+    ('e5555555-5555-5555-5555-555555555555', 'WB-' || to_char(NOW(), 'YYYYMMDD') || '-E005', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', '55555555-5555-5555-5555-555555555555', 'a2222222-2222-2222-2222-222222222222', apple_pomace_id, 9.5, 26.2, 16.7, 'WEIGHED', false, 70.00, 1169.00, 'Apple pomace from Tasman Orchards', NOW() - INTERVAL '2 hours'),
+    ('e6666666-6666-6666-6666-666666666666', 'WB-' || to_char(NOW(), 'YYYYMMDD') || '-F006', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', '33333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111', cow_shed_id, 8.8, 30.5, 21.7, 'WEIGHED', false, 85.00, 1844.50, 'Dairy effluent - large farm delivery', NOW() - INTERVAL '1 hour');
 
     -- Rejected job due to contamination
     INSERT INTO weighbridge_jobs (id, job_number, company_id, truck_id, driver_id, waste_stream_type_id, tare_weight, gross_weight, net_weight, status, is_contaminated, rejection_reason, unit_price, total_price, notes, weighed_at, approved_at, approved_by) VALUES
-    ('w7777777-7777-7777-7777-777777777777', 'WB-' || to_char(NOW() - INTERVAL '4 days', 'YYYYMMDD') || '-G007', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', 't7777777-7777-7777-7777-777777777777', NULL, green_waste_id, 6.2, 14.8, 8.6, 'REJECTED', true, 'Plastic contamination detected - 15% of load', 75.00, 645.00, 'Returned to sender for re-sorting', NOW() - INTERVAL '4 days', NOW() - INTERVAL '95 hours', '11111111-1111-1111-1111-111111111111');
+    ('e7777777-7777-7777-7777-777777777777', 'WB-' || to_char(NOW() - INTERVAL '4 days', 'YYYYMMDD') || '-G007', 'c3d4e5f6-a7b8-9012-3456-789012cdef01', '77777777-7777-7777-7777-777777777777', NULL, green_waste_id, 6.2, 14.8, 8.6, 'REJECTED', true, 'Plastic contamination detected - 15% of load', 75.00, 645.00, 'Returned to sender for re-sorting', NOW() - INTERVAL '4 days', NOW() - INTERVAL '95 hours', '11111111-1111-1111-1111-111111111111');
 
     -- Older approved jobs for historical data
     INSERT INTO weighbridge_jobs (id, job_number, company_id, truck_id, driver_id, waste_stream_type_id, tare_weight, gross_weight, net_weight, status, is_contaminated, unit_price, total_price, notes, weighed_at, approved_at, approved_by) VALUES
-    ('w8888888-8888-8888-8888-888888888888', 'WB-' || to_char(NOW() - INTERVAL '10 days', 'YYYYMMDD') || '-H008', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', 't1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', food_waste_id, 8.3, 27.8, 19.5, 'APPROVED', false, 150.00, 2925.00, 'Hotel food waste', NOW() - INTERVAL '10 days', NOW() - INTERVAL '239 hours', '11111111-1111-1111-1111-111111111111'),
-    ('w9999999-9999-9999-9999-999999999999', 'WB-' || to_char(NOW() - INTERVAL '15 days', 'YYYYMMDD') || '-I009', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', 't4444444-4444-4444-4444-444444444444', 'd2222222-2222-2222-2222-222222222222', grape_marc_id, 9.0, 23.4, 14.4, 'APPROVED', false, 70.00, 1008.00, 'Grape marc from Neudorf Vineyard', NOW() - INTERVAL '15 days', NOW() - INTERVAL '359 hours', '11111111-1111-1111-1111-111111111111');
+    ('e8888888-8888-8888-8888-888888888888', 'WB-' || to_char(NOW() - INTERVAL '10 days', 'YYYYMMDD') || '-H008', 'a1b2c3d4-e5f6-7890-1234-567890abcdef', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', food_waste_id, 8.3, 27.8, 19.5, 'APPROVED', false, 150.00, 2925.00, 'Hotel food waste', NOW() - INTERVAL '10 days', NOW() - INTERVAL '239 hours', '11111111-1111-1111-1111-111111111111'),
+    ('e9999999-9999-9999-9999-999999999999', 'WB-' || to_char(NOW() - INTERVAL '15 days', 'YYYYMMDD') || '-I009', 'b2c3d4e5-f6a7-8901-2345-678901bcdef0', '44444444-4444-4444-4444-444444444444', 'a2222222-2222-2222-2222-222222222222', grape_marc_id, 9.0, 23.4, 14.4, 'APPROVED', false, 70.00, 1008.00, 'Grape marc from Neudorf Vineyard', NOW() - INTERVAL '15 days', NOW() - INTERVAL '359 hours', '11111111-1111-1111-1111-111111111111');
 
 END $$;
 
@@ -214,9 +214,9 @@ END $$;
 -- =============================================
 
 INSERT INTO audit_log (user_id, action, entity_type, entity_id, details) VALUES
-('11111111-1111-1111-1111-111111111111', 'APPROVED_JOB', 'weighbridge_job', 'w1111111-1111-1111-1111-111111111111', '{"status": "APPROVED", "reason": "Clean load, no contamination"}'),
-('11111111-1111-1111-1111-111111111111', 'APPROVED_JOB', 'weighbridge_job', 'w2222222-2222-2222-2222-222222222222', '{"status": "APPROVED", "reason": "Quality food waste"}'),
-('11111111-1111-1111-1111-111111111111', 'REJECTED_JOB', 'weighbridge_job', 'w7777777-7777-7777-7777-777777777777', '{"status": "REJECTED", "reason": "Plastic contamination detected"}');
+('11111111-1111-1111-1111-111111111111', 'APPROVED_JOB', 'weighbridge_job', 'e1111111-1111-1111-1111-111111111111', '{"status": "APPROVED", "reason": "Clean load, no contamination"}'),
+('11111111-1111-1111-1111-111111111111', 'APPROVED_JOB', 'weighbridge_job', 'e2222222-2222-2222-2222-222222222222', '{"status": "APPROVED", "reason": "Quality food waste"}'),
+('11111111-1111-1111-1111-111111111111', 'REJECTED_JOB', 'weighbridge_job', 'e7777777-7777-7777-7777-777777777777', '{"status": "REJECTED", "reason": "Plastic contamination detected"}');
 
 -- =============================================
 -- Summary queries to verify data
