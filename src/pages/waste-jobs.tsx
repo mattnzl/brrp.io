@@ -84,13 +84,8 @@ export default function WasteJobs() {
     if (session.company) {
       setCurrentCompanyName(session.company.name);
       setCurrentCompanyId(session.company.id);
-      // Pre-select customer for company users based on company type
-      if (session.user.role === UserRole.CUSTOMER) {
-        const matchingCustomer = customers.find(c => c.type === (session.company as any)?.type);
-        if (matchingCustomer) {
-          setSelectedCustomer(matchingCustomer);
-        }
-      }
+      // Note: Customer selection is independent of user's company
+      // Users should manually select the customer (waste collection company) for each job
     }
 
     // Fetch waste jobs from API
@@ -268,6 +263,7 @@ export default function WasteJobs() {
           <div className="user-info">
             <span className="user-name">{currentUser.firstName} {currentUser.lastName}</span>
             <span className="user-role">
+              {/* Display friendly role names - CUSTOMER role represents Company Admins */}
               {currentUser.role === UserRole.ADMIN && 'System Admin'}
               {currentUser.role === UserRole.CUSTOMER && 'Company Admin'}
               {currentUser.role === UserRole.DRIVER && 'Driver'}

@@ -113,11 +113,13 @@ export class EmissionsCalculationService {
    * GER represents emissions reduction achieved through waste diversion and processing
    * @param scadaData SCADA measurement data
    * @param standard IPCC standard to apply
+   * @param wasteData Optional waste input data for complete emissions record
    * @returns Emissions data with GER calculation
    */
   static calculateGER(
     scadaData: SCADAMeasurement,
-    standard: IPCCStandard = IPCCStandard.ACM0022
+    standard: IPCCStandard = IPCCStandard.ACM0022,
+    wasteData?: { volumeTonnes: number; type: string }
   ): EmissionsData {
     const co2Equivalent = this.calculateCO2Equivalent(scadaData.methaneDestroyed);
     
@@ -138,9 +140,9 @@ export class EmissionsCalculationService {
       id: `EM-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       scadaMeasurementId: scadaData.id,
       
-      // Required waste input fields
-      wasteVolumeTonnes: 0, // To be populated from actual waste job data
-      wasteType: 'MIXED', // To be populated from actual waste job data
+      // Waste input fields - use provided data or defaults for SCADA-only calculations
+      wasteVolumeTonnes: wasteData?.volumeTonnes ?? 0,
+      wasteType: wasteData?.type ?? 'UNKNOWN',
       
       // Methane data
       methaneDestroyed: scadaData.methaneDestroyed,
