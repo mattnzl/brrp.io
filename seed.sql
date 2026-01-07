@@ -7,10 +7,10 @@
 -- ============================================
 
 -- Insert sample companies
-INSERT INTO companies (id, name, type, contact_email, contact_phone, address, is_active, created_at)
+INSERT INTO companies (id, name, type, contact_email, contact_phone, address, logo_url, is_active, created_at, updated_at)
 VALUES 
-  ('550e8400-e29b-41d4-a716-446655440001', 'Waste Management NZ', 'WASTE_MANAGEMENT_NZ', 'contact@wastemanagement.co.nz', '+64 9 123 4567', '123 Main Street, Auckland, NZ', true, NOW()),
-  ('550e8400-e29b-41d4-a716-446655440002', 'enviroNZ', 'ENVIRONZ', 'info@environz.co.nz', '+64 9 765 4321', '456 Green Ave, Wellington, NZ', true, NOW())
+  ('550e8400-e29b-41d4-a716-446655440001', 'Waste Management NZ', 'WASTE_MANAGEMENT_NZ', 'contact@wastemanagement.co.nz', '+64 9 123 4567', '123 Main Street, Auckland, NZ', NULL, true, NOW(), NOW()),
+  ('550e8400-e29b-41d4-a716-446655440002', 'enviroNZ', 'ENVIRONZ', 'info@environz.co.nz', '+64 9 765 4321', '456 Green Ave, Wellington, NZ', NULL, true, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
@@ -19,31 +19,31 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Insert system admin
 -- Password: admin123 (hashed with bcrypt, cost 10)
-INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, is_active, created_at)
+INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, photo_url, is_active, created_at, updated_at)
 VALUES 
-  ('660e8400-e29b-41d4-a716-446655440001', 'admin', 'admin@brrp.io', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tG', 'SYSTEM_ADMIN', NULL, 'System', 'Administrator', true, NOW())
+  ('660e8400-e29b-41d4-a716-446655440001', 'admin', 'admin@brrp.io', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tG', 'SYSTEM_ADMIN', NULL, 'System', 'Administrator', NULL, true, NOW(), NOW())
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert company admin for Waste Management NZ
 -- Password: wmnz123
-INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, is_active, created_at, created_by)
+INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, photo_url, is_active, created_at, updated_at, created_by)
 VALUES 
-  ('660e8400-e29b-41d4-a716-446655440002', 'wmnz_admin', 'admin@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tH', 'COMPANY_ADMIN', '550e8400-e29b-41d4-a716-446655440001', 'John', 'Smith', true, NOW(), '660e8400-e29b-41d4-a716-446655440001')
+  ('660e8400-e29b-41d4-a716-446655440002', 'wmnz_admin', 'admin@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tH', 'COMPANY_ADMIN', '550e8400-e29b-41d4-a716-446655440001', 'John', 'Smith', NULL, true, NOW(), NOW(), '660e8400-e29b-41d4-a716-446655440001')
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert operator for Waste Management NZ
 -- Password: operator123
-INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, is_active, created_at, created_by)
+INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, photo_url, is_active, created_at, updated_at, created_by)
 VALUES 
-  ('660e8400-e29b-41d4-a716-446655440003', 'wmnz_operator1', 'operator1@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tI', 'OPERATOR', '550e8400-e29b-41d4-a716-446655440001', 'Jane', 'Doe', true, NOW(), '660e8400-e29b-41d4-a716-446655440002'),
-  ('660e8400-e29b-41d4-a716-446655440004', 'wmnz_driver1', 'driver1@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tJ', 'OPERATOR', '550e8400-e29b-41d4-a716-446655440001', 'Mike', 'Johnson', true, NOW(), '660e8400-e29b-41d4-a716-446655440002')
+  ('660e8400-e29b-41d4-a716-446655440003', 'wmnz_operator1', 'operator1@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tI', 'OPERATOR', '550e8400-e29b-41d4-a716-446655440001', 'Jane', 'Doe', NULL, true, NOW(), NOW(), '660e8400-e29b-41d4-a716-446655440002'),
+  ('660e8400-e29b-41d4-a716-446655440004', 'wmnz_driver1', 'driver1@wastemanagement.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tJ', 'OPERATOR', '550e8400-e29b-41d4-a716-446655440001', 'Mike', 'Johnson', NULL, true, NOW(), NOW(), '660e8400-e29b-41d4-a716-446655440002')
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert company admin for enviroNZ
 -- Password: environz123
-INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, is_active, created_at, created_by)
+INSERT INTO users (id, username, email, password_hash, role, company_id, first_name, last_name, photo_url, is_active, created_at, updated_at, created_by)
 VALUES 
-  ('660e8400-e29b-41d4-a716-446655440005', 'environz_admin', 'admin@environz.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tK', 'COMPANY_ADMIN', '550e8400-e29b-41d4-a716-446655440002', 'Sarah', 'Williams', true, NOW(), '660e8400-e29b-41d4-a716-446655440001')
+  ('660e8400-e29b-41d4-a716-446655440005', 'environz_admin', 'admin@environz.co.nz', '$2b$10$rKvFJZXZ3Z3Z3Z3Z3Z3Z3eH5tF5tF5tF5tF5tF5tF5tF5tF5tF5tK', 'COMPANY_ADMIN', '550e8400-e29b-41d4-a716-446655440002', 'Sarah', 'Williams', NULL, true, NOW(), NOW(), '660e8400-e29b-41d4-a716-446655440001')
 ON CONFLICT (username) DO NOTHING;
 
 -- ============================================
