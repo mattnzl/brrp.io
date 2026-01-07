@@ -1,8 +1,8 @@
-import { User, UserRole, Company, AuthSession, CustomerType } from '../types';
+import { User, UserRole, Company, AuthSession } from '../types';
 
 /**
- * Authentication Service
- * Handles user authentication, authorization, and session management
+ * Authentication Service - Rewritten for BRRP.IO Waste Tracking
+ * Three roles: admin (god privileges), customer (company user), driver (operational)
  */
 
 export class AuthService {
@@ -12,42 +12,71 @@ export class AuthService {
   private static currentSession: AuthSession | null = null;
 
   /**
-   * Initialize with default system admin and companies
+   * Initialize with default admin and demo companies
    */
   static initialize(): void {
-    // Create default companies
+    // Create demo companies (waste companies)
     this.companies = [
       {
-        id: 'company-wmnz',
-        name: 'Waste Management NZ',
-        type: CustomerType.WASTE_MANAGEMENT_NZ,
-        contactEmail: 'contact@wastemanagement.co.nz',
-        contactPhone: '+64 9 123 4567',
+        id: 'company-wmnz-001',
+        name: 'Waste Management NZ Ltd',
+        businessNumber: 'NZ123456789',
+        contactEmail: 'accounts@wmnz.co.nz',
+        contactPhone: '+64 4 123 4567',
+        address: '123 Waste Lane, Wellington, New Zealand',
         isActive: true,
         createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
-        id: 'company-environz',
-        name: 'enviroNZ',
-        type: CustomerType.ENVIRONZ,
+        id: 'company-env-001',
+        name: 'EnviroNZ Limited',
+        businessNumber: 'NZ987654321',
         contactEmail: 'info@environz.co.nz',
         contactPhone: '+64 9 765 4321',
+        address: '456 Green Street, Auckland, New Zealand',
         isActive: true,
         createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
 
-    // Create default system admin
+    // Create default users
     this.users = [
       {
-        id: 'user-sysadmin',
+        id: 'user-admin-001',
         username: 'admin',
         email: 'admin@brrp.io',
-        role: UserRole.SYSTEM_ADMIN,
+        role: UserRole.ADMIN,
         firstName: 'System',
         lastName: 'Administrator',
         isActive: true,
         createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'user-customer-wmnz-001',
+        username: 'wmnz_customer',
+        email: 'customer@wmnz.co.nz',
+        role: UserRole.CUSTOMER,
+        companyId: 'company-wmnz-001',
+        firstName: 'John',
+        lastName: 'Smith',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'user-driver-001',
+        username: 'driver1',
+        email: 'driver1@wmnz.co.nz',
+        role: UserRole.DRIVER,
+        companyId: 'company-wmnz-001',
+        firstName: 'Mike',
+        lastName: 'Johnson',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
   }
@@ -56,7 +85,6 @@ export class AuthService {
    * Login user
    */
   static login(username: string, password: string): AuthSession | null {
-    // Simple password check for demo (in production, use proper hashing)
     const user = this.users.find(
       (u) => u.username === username && u.isActive
     );
@@ -65,7 +93,7 @@ export class AuthService {
       return null;
     }
 
-    // For demo, accept any password for simplicity
+    // For demo, accept any password
     // In production, verify password hash
     
     const company = user.companyId
@@ -103,41 +131,45 @@ export class AuthService {
 
   /**
    * Check if user has permission
+   * Admin has god privileges (can do everything)
+   * Customer can manage their company data
+   * Driver has limited access
    */
   static hasPermission(role: UserRole, requiredRole: UserRole): boolean {
     const roleHierarchy = {
-      [UserRole.SYSTEM_ADMIN]: 3,
-      [UserRole.COMPANY_ADMIN]: 2,
-      [UserRole.OPERATOR]: 1,
+      [UserRole.ADMIN]: 3,
+      [UserRole.CUSTOMER]: 2,
+      [UserRole.DRIVER]: 1,
     };
 
     return roleHierarchy[role] >= roleHierarchy[requiredRole];
   }
 
   /**
-   * Create a new company (System Admin only)
+   * Create a new company (Admin only)
    */
   static createCompany(
     name: string,
-    type: CustomerType,
     contactEmail: string,
     contactPhone: string,
+    businessNumber?: string,
     address?: string
   ): Company | null {
     const session = this.getCurrentSession();
-    if (!session || session.user.role !== UserRole.SYSTEM_ADMIN) {
-      throw new Error('Only System Admins can create companies');
+    if (!session || session.user.role !== UserRole.ADMIN) {
+      throw new Error('Only Admins can create companies');
     }
 
     const company: Company = {
       id: `company-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       name,
-      type,
+      businessNumber,
       contactEmail,
       contactPhone,
       address,
       isActive: true,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     this.companies.push(company);
@@ -146,8 +178,8 @@ export class AuthService {
 
   /**
    * Create a new user
-   * System Admin can create any user
-   * Company Admin can only create Operators for their company
+   * Admin can create any user
+   * Customer can create drivers for their company
    */
   static createUser(
     username: string,
@@ -163,16 +195,16 @@ export class AuthService {
     }
 
     // Validation based on creator role
-    if (session.user.role === UserRole.COMPANY_ADMIN) {
-      // Company Admin can only create Operators for their own company
-      if (role !== UserRole.OPERATOR) {
-        throw new Error('Company Admins can only create Operators');
+    if (session.user.role === UserRole.CUSTOMER) {
+      // Customer can only create drivers for their own company
+      if (role !== UserRole.DRIVER) {
+        throw new Error('Customers can only create drivers');
       }
       if (companyId !== session.user.companyId) {
-        throw new Error('Company Admins can only create users for their own company');
+        throw new Error('Customers can only create users for their own company');
       }
-    } else if (session.user.role === UserRole.OPERATOR) {
-      throw new Error('Operators cannot create users');
+    } else if (session.user.role === UserRole.DRIVER) {
+      throw new Error('Drivers cannot create users');
     }
 
     // Check if username already exists
@@ -195,7 +227,7 @@ export class AuthService {
       lastName,
       isActive: true,
       createdAt: new Date(),
-      createdBy: session.user.id,
+      updatedAt: new Date(),
     };
 
     this.users.push(user);
@@ -203,21 +235,21 @@ export class AuthService {
   }
 
   /**
-   * Get all companies (System Admin only)
+   * Get all companies (Admin only)
    */
   static getAllCompanies(): Company[] {
     const session = this.getCurrentSession();
-    if (!session || session.user.role !== UserRole.SYSTEM_ADMIN) {
-      throw new Error('Only System Admins can view all companies');
+    if (!session || session.user.role !== UserRole.ADMIN) {
+      throw new Error('Only Admins can view all companies');
     }
     return this.companies;
   }
 
   /**
    * Get users based on current user's role
-   * System Admin: all users
-   * Company Admin: users in their company
-   * Operator: none
+   * Admin: all users
+   * Customer: users in their company
+   * Driver: none
    */
   static getUsers(): User[] {
     const session = this.getCurrentSession();
@@ -225,12 +257,12 @@ export class AuthService {
       throw new Error('Not authenticated');
     }
 
-    if (session.user.role === UserRole.SYSTEM_ADMIN) {
+    if (session.user.role === UserRole.ADMIN) {
       return this.users;
-    } else if (session.user.role === UserRole.COMPANY_ADMIN) {
+    } else if (session.user.role === UserRole.CUSTOMER) {
       return this.users.filter((u) => u.companyId === session.user.companyId);
     } else {
-      return []; // Operators can't view other users
+      return []; // Drivers can't view other users
     }
   }
 
@@ -242,7 +274,7 @@ export class AuthService {
   }
 
   /**
-   * Update user status
+   * Update user status (Admin only, or Customer for their company)
    */
   static updateUserStatus(userId: string, isActive: boolean): boolean {
     const session = this.getCurrentSession();
@@ -255,17 +287,18 @@ export class AuthService {
       return false;
     }
 
-    // System Admin can update any user
-    // Company Admin can only update users in their company
-    if (session.user.role === UserRole.COMPANY_ADMIN) {
+    // Admin can update any user
+    // Customer can only update users in their company
+    if (session.user.role === UserRole.CUSTOMER) {
       if (user.companyId !== session.user.companyId) {
         throw new Error('Cannot update users from other companies');
       }
-    } else if (session.user.role === UserRole.OPERATOR) {
-      throw new Error('Operators cannot update users');
+    } else if (session.user.role === UserRole.DRIVER) {
+      throw new Error('Drivers cannot update users');
     }
 
     user.isActive = isActive;
+    user.updatedAt = new Date();
     return true;
   }
 }
