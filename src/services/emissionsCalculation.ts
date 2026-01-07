@@ -137,14 +137,27 @@ export class EmissionsCalculationService {
     const emissionsData: EmissionsData = {
       id: `EM-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       scadaMeasurementId: scadaData.id,
+      
+      // Required waste input fields
+      wasteVolumeTonnes: 0, // To be populated from actual waste job data
+      wasteType: 'MIXED', // To be populated from actual waste job data
+      
+      // Methane data
       methaneDestroyed: scadaData.methaneDestroyed,
+      methaneDestroyedM3: scadaData.methaneDestroyed,
+      
+      // Calculated emissions
       co2Equivalent,
+      co2EquivalentTonnes: co2Equivalent,
       globalWarmingPotential: this.CH4_GWP,
       energyProduced,
       defValue,
       grossEmissionsReduction,
+      
+      // Metadata
       calculatedAt: new Date(),
       standardUsed: standard,
+      createdAt: new Date(),
     };
     
     return emissionsData;
@@ -208,18 +221,22 @@ export class EmissionsCalculationService {
     const errors: string[] = [];
     
     // Validate GWP is within acceptable range (IPCC AR5: 28-36)
-    if (emissionsData.globalWarmingPotential < 28 || 
-        emissionsData.globalWarmingPotential > 36) {
+    if (emissionsData.globalWarmingPotential !== undefined && 
+        (emissionsData.globalWarmingPotential < 28 || 
+         emissionsData.globalWarmingPotential > 36)) {
       errors.push('GWP value outside IPCC AR5 range (28-36)');
     }
     
     // Validate CO2 equivalent is positive
-    if (emissionsData.co2Equivalent <= 0) {
+    if (emissionsData.co2Equivalent !== undefined && 
+        emissionsData.co2Equivalent <= 0) {
       errors.push('CO2 equivalent must be positive');
     }
     
     // Validate GER equals CO2 equivalent for methane destruction
-    if (Math.abs(emissionsData.grossEmissionsReduction - emissionsData.co2Equivalent) > 0.001) {
+    if (emissionsData.grossEmissionsReduction !== undefined && 
+        emissionsData.co2Equivalent !== undefined &&
+        Math.abs(emissionsData.grossEmissionsReduction - emissionsData.co2Equivalent) > 0.001) {
       errors.push('GER calculation mismatch');
     }
     
@@ -227,21 +244,24 @@ export class EmissionsCalculationService {
     switch (standard) {
       case IPCCStandard.ACM0022:
         // Alternative waste treatment processes
-        if (emissionsData.methaneDestroyed <= 0) {
+        if (emissionsData.methaneDestroyed !== undefined && 
+            emissionsData.methaneDestroyed <= 0) {
           errors.push('ACM0022 requires positive methane destruction');
         }
         break;
         
       case IPCCStandard.AM0053:
         // Biogenic methane injection
-        if (emissionsData.energyProduced <= 0) {
+        if (emissionsData.energyProduced !== undefined && 
+            emissionsData.energyProduced <= 0) {
           errors.push('AM0053 requires positive energy production');
         }
         break;
         
       case IPCCStandard.AMS_I_D:
         // Grid connected renewable electricity
-        if (emissionsData.energyProduced <= 0) {
+        if (emissionsData.energyProduced !== undefined && 
+            emissionsData.energyProduced <= 0) {
           errors.push('AMS-I.D requires electricity generation');
         }
         break;

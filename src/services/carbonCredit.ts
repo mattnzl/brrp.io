@@ -47,7 +47,7 @@ export class CarbonCreditService {
       tokenId,
       emissionsDataId: emissionsData.id,
       verificationRecordId: verificationRecord.id,
-      units: emissionsData.grossEmissionsReduction, // CO2eq tonnes
+      units: emissionsData.grossEmissionsReduction || 0, // CO2eq tonnes
       mintedAt: new Date(),
       blockchainAddress,
       registryId,

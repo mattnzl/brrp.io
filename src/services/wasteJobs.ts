@@ -56,6 +56,13 @@ export class WasteJobsService {
         energyValue: EnergyValue.MEDIUM,
         nutrientValue: NutrientValue.MEDIUM,
       },
+      [WasteStreamType.GRAPE_MARC]: {
+        type: WasteStreamType.GRAPE_MARC,
+        unitOfMeasure: 'Tonne',
+        standardPrice: 210,
+        energyValue: EnergyValue.MEDIUM,
+        nutrientValue: NutrientValue.MEDIUM,
+      },
       [WasteStreamType.FISH_WASTE]: {
         type: WasteStreamType.FISH_WASTE,
         unitOfMeasure: 'Tonne',

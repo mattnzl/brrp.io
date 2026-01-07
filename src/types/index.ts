@@ -252,23 +252,31 @@ export interface SCADAMeasurement {
 export interface EmissionsData {
   id: string;
   weighbridgeJobId?: string; // Link to specific job
+  scadaMeasurementId?: string; // Link to SCADA measurement
   
   // Waste input
   wasteVolumeTonnes: number;
   wasteType: string;
   
-  // Methane data (from SCADA)
+  // Methane data (from SCADA) - supporting both naming conventions
   methaneGeneratedM3?: number;
   methaneDestroyedM3?: number;
+  methaneDestroyed?: number; // Alias for methaneDestroyedM3 (m³)
   
-  // Emissions calculations
+  // Emissions calculations - supporting both naming conventions
   co2EquivalentTonnes?: number; // Calculated from methane destroyed
+  co2Equivalent?: number; // Alias for co2EquivalentTonnes (tonnes CO2eq)
+  globalWarmingPotential?: number; // GWP factor (typically 28-36 for methane)
   emissionFactor?: number; // From waste stream type
   grossEmissionsReduction?: number; // GER in tonnes CO2eq
+  energyProduced?: number; // kWh or MJ
+  defValue?: number; // Default Emission Factor value
   
   // SCADA metadata
   scadaReadingTimestamp?: Date;
   scadaSource?: string; // REST endpoint or system identifier
+  standardUsed?: IPCCStandard; // IPCC standard applied
+  calculatedAt?: Date; // When calculations were performed
   
   createdAt: Date;
 }
